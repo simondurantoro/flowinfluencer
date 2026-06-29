@@ -269,6 +269,25 @@
     /* CHARTS */
     .chart-tooltip { background:var(--surface) !important; border:1px solid var(--border2) !important; border-radius:8px !important; padding:8px 12px !important; }
 
+
+    /* MINI CALENDARIO EN FICHA */
+    .mini-cal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px; }
+    .mini-cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .mini-cal-title { font-size:13px; font-weight:600; color:var(--text); }
+    .mini-cal-btn { background:none; border:1px solid var(--border2); border-radius:4px; color:var(--muted); padding:3px 8px; cursor:pointer; font-size:12px; }
+    .mini-cal-btn:hover { color:var(--text); }
+    .mini-cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; }
+    .mini-cal-day-label { font-size:9px; color:var(--muted); text-align:center; padding:3px 0; font-weight:600; }
+    .mini-cal-cell { min-height:32px; padding:2px; border-radius:4px; position:relative; }
+    .mini-cal-cell.today { background:var(--accent-dim); }
+    .mini-cal-cell.other-month { opacity:0.3; }
+    .mini-cal-num { font-size:10px; color:var(--muted); text-align:center; line-height:1.8; }
+    .mini-cal-cell.today .mini-cal-num { color:var(--accent); font-weight:700; }
+    .mini-cal-dot { width:100%; padding:1px 2px; border-radius:2px; font-size:8px; font-weight:500; text-align:center; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
+    .mini-cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+    .mini-cal-leg { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); }
+    .mini-cal-leg-dot { width:8px; height:8px; border-radius:2px; }
+
     /* ACCIONES CAMPAÑA */
     .action-bar { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
     .action-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:16px; }
@@ -1118,7 +1137,7 @@
     tbody.innerHTML = campanas.map(c => {
       const factura = facturas.find(f => f.campana_id === c.id)
       const estadoCobro = factura ? badgeHtml(factura.estado) : '<span class="badge badge-gray">Sin factura</span>'
-      return `<tr onclick="verDetalle('${c.id}')">
+      return `<tr onclick="verDetallePatched('${c.id}')">
         <td><div class="brand-cell">${brandLogo(c.marcas?.nombre || c.nombre)}
           <div><div class="brand-name">${c.nombre}</div>
           <div class="brand-sub">${c.marcas?.nombre || ''} · ${c.agencias?.nombre || 'Directo'}</div></div></div></td>
@@ -1146,7 +1165,7 @@
     }
     document.getElementById('campanas-table').style.display = 'table'
     document.getElementById('campanas-body').innerHTML = data.map(c => `
-      <tr onclick="verDetalle('${c.id}')">
+      <tr onclick="verDetallePatched('${c.id}')">
         <td><div class="brand-cell">${brandLogo(c.marcas?.nombre || c.nombre)}
           <div><div class="brand-name">${c.nombre}</div>
           <div class="brand-sub">${(c.derechos || []).join(' · ') || '—'}</div></div></div></td>
@@ -1213,6 +1232,30 @@
         <div class="action-card-title">Acciones de campaña</div>
         ${buildAcciones(c)}
       </div>
+
+      <div class="mini-cal" id="mini-cal-wrap">
+        <div class="mini-cal-nav">
+          <span class="mini-cal-title" id="mini-cal-label"></span>
+          <div style="display:flex;gap:6px">
+            <button class="mini-cal-btn" onclick="miniCalCambiarMes(-1)">&#8249;</button>
+            <button class="mini-cal-btn" onclick="miniCalCambiarMes(1)">&#8250;</button>
+          </div>
+        </div>
+        <div class="mini-cal-grid" id="mini-cal-labels">
+          <div class="mini-cal-day-label">L</div><div class="mini-cal-day-label">M</div>
+          <div class="mini-cal-day-label">X</div><div class="mini-cal-day-label">J</div>
+          <div class="mini-cal-day-label">V</div><div class="mini-cal-day-label">S</div>
+          <div class="mini-cal-day-label">D</div>
+        </div>
+        <div class="mini-cal-grid" id="mini-cal-days" style="margin-top:2px"></div>
+        <div class="mini-cal-legend">
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:#bf5af2"></div>Contrato</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--blue)"></div>Entrega</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicación</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte/Boleta</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Vencimiento pago</div>
+        </div>
+      </div>
     `
   }
 
@@ -1234,6 +1277,14 @@
         </div>
       </div>`
     }).join('')
+  }
+
+  // Patch verDetalle to also init mini cal
+  const _origVerDetalle = verDetalle
+  async function verDetallePatched(id) {
+    const { data: c2 } = await db.from('campanas').select('*').eq('id', id).single()
+    await verDetalle(id)
+    if (c2) setTimeout(() => initMiniCal(c2), 50)
   }
 
   function buildAcciones(c) {
@@ -1344,6 +1395,87 @@
     alert('Pago registrado. Campaña cerrada.')
     verDetalle(id)
     loadDashboard()
+  }
+
+
+  // ── MINI CALENDARIO EN FICHA ───────────────────────────────
+  let miniCalYear = new Date().getFullYear()
+  let miniCalMonth = new Date().getMonth()
+  let miniCalEventos = []
+
+  function initMiniCal(campana) {
+    // Generar eventos de la campaña
+    miniCalEventos = []
+    if (campana.fecha_inicio) miniCalEventos.push({ fecha: campana.fecha_inicio, label: 'Contrato', color: '#bf5af2' })
+    if (campana.fecha_publicacion) {
+      // Entrega 8 días antes
+      const entrega = new Date(campana.fecha_publicacion + 'T12:00:00')
+      entrega.setDate(entrega.getDate() - 8)
+      miniCalEventos.push({ fecha: entrega.toISOString().split('T')[0], label: 'Entrega', color: 'var(--blue)' })
+      miniCalEventos.push({ fecha: campana.fecha_publicacion, label: 'Publicar', color: 'var(--success)' })
+      // Reporte 7 días después
+      const reporte = new Date(campana.fecha_publicacion + 'T12:00:00')
+      reporte.setDate(reporte.getDate() + 7)
+      miniCalEventos.push({ fecha: reporte.toISOString().split('T')[0], label: 'Reporte', color: 'var(--warning)' })
+      miniCalEventos.push({ fecha: reporte.toISOString().split('T')[0], label: 'Boleta', color: 'var(--warning)' })
+      // Pago 30 días después del reporte
+      if (campana.forma_pago && campana.forma_pago.includes('30')) {
+        const pago = new Date(reporte)
+        pago.setDate(pago.getDate() + 30)
+        miniCalEventos.push({ fecha: pago.toISOString().split('T')[0], label: 'Pago', color: 'var(--danger)' })
+      }
+    }
+    // Ir al mes de la publicación si existe
+    if (campana.fecha_publicacion) {
+      const d = new Date(campana.fecha_publicacion + 'T12:00:00')
+      miniCalYear = d.getFullYear()
+      miniCalMonth = d.getMonth()
+    } else {
+      miniCalYear = new Date().getFullYear()
+      miniCalMonth = new Date().getMonth()
+    }
+    renderMiniCal()
+  }
+
+  function miniCalCambiarMes(delta) {
+    miniCalMonth += delta
+    if (miniCalMonth > 11) { miniCalMonth = 0; miniCalYear++ }
+    if (miniCalMonth < 0) { miniCalMonth = 11; miniCalYear-- }
+    renderMiniCal()
+  }
+
+  function renderMiniCal() {
+    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    document.getElementById('mini-cal-label').textContent = MESES[miniCalMonth] + ' ' + miniCalYear
+
+    const hoy = new Date()
+    const primerDia = new Date(miniCalYear, miniCalMonth, 1)
+    const ultimoDia = new Date(miniCalYear, miniCalMonth + 1, 0)
+    let startDow = primerDia.getDay()
+    if (startDow === 0) startDow = 7
+    startDow--
+
+    const grid = document.getElementById('mini-cal-days')
+    grid.innerHTML = ''
+    const totalCells = Math.ceil((startDow + ultimoDia.getDate()) / 7) * 7
+
+    for (let i = 0; i < totalCells; i++) {
+      const dayNum = i - startDow + 1
+      const fecha = new Date(miniCalYear, miniCalMonth, dayNum)
+      const isOther = dayNum < 1 || dayNum > ultimoDia.getDate()
+      const isHoy = !isOther && fecha.toDateString() === hoy.toDateString()
+      const fechaStr = fecha.toISOString().split('T')[0]
+      const evs = miniCalEventos.filter(e => e.fecha === fechaStr)
+
+      const cell = document.createElement('div')
+      cell.className = 'mini-cal-cell' + (isOther ? ' other-month' : '') + (isHoy ? ' today' : '')
+      let inner = `<div class="mini-cal-num">${fecha.getDate()}</div>`
+      evs.forEach(e => {
+        inner += `<div class="mini-cal-dot" style="background:${e.color}22;color:${e.color};border:0.5px solid ${e.color}" title="${e.label}">${e.label}</div>`
+      })
+      cell.innerHTML = inner
+      grid.appendChild(cell)
+    }
   }
 
   function volverLista() {
