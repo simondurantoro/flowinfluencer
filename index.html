@@ -1236,25 +1236,32 @@
       <div class="mini-cal" id="mini-cal-wrap">
         <div class="mini-cal-nav">
           <span class="mini-cal-title" id="mini-cal-label"></span>
-          <div style="display:flex;gap:6px">
-            <button class="mini-cal-btn" onclick="miniCalCambiarMes(-1)">&#8249;</button>
-            <button class="mini-cal-btn" onclick="miniCalCambiarMes(1)">&#8250;</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="display:flex;gap:4px;margin-right:8px">
+              <button class="mini-cal-btn active-view" id="btn-vista-cal" onclick="setVistaCal('calendario')" style="font-size:11px">📅 Calendario</button>
+              <button class="mini-cal-btn" id="btn-vista-tl2" onclick="setVistaCal('timeline')" style="font-size:11px">📋 Timeline</button>
+            </div>
+            <button class="mini-cal-btn" id="mini-cal-prev" onclick="miniCalCambiarMes(-1)">&#8249;</button>
+            <button class="mini-cal-btn" id="mini-cal-next" onclick="miniCalCambiarMes(1)">&#8250;</button>
           </div>
         </div>
-        <div class="mini-cal-grid" id="mini-cal-labels">
-          <div class="mini-cal-day-label">L</div><div class="mini-cal-day-label">M</div>
-          <div class="mini-cal-day-label">X</div><div class="mini-cal-day-label">J</div>
-          <div class="mini-cal-day-label">V</div><div class="mini-cal-day-label">S</div>
-          <div class="mini-cal-day-label">D</div>
+        <div id="mini-cal-calendario">
+          <div class="mini-cal-grid">
+            <div class="mini-cal-day-label">L</div><div class="mini-cal-day-label">M</div>
+            <div class="mini-cal-day-label">X</div><div class="mini-cal-day-label">J</div>
+            <div class="mini-cal-day-label">V</div><div class="mini-cal-day-label">S</div>
+            <div class="mini-cal-day-label">D</div>
+          </div>
+          <div class="mini-cal-grid" id="mini-cal-days" style="margin-top:2px"></div>
+          <div class="mini-cal-legend">
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:#bf5af2"></div>Contrato</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--blue)"></div>Entrega</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicación</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte/Boleta</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Vencimiento pago</div>
+          </div>
         </div>
-        <div class="mini-cal-grid" id="mini-cal-days" style="margin-top:2px"></div>
-        <div class="mini-cal-legend">
-          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:#bf5af2"></div>Contrato</div>
-          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--blue)"></div>Entrega</div>
-          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicación</div>
-          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte/Boleta</div>
-          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Vencimiento pago</div>
-        </div>
+        <div id="mini-cal-timeline" style="display:none"></div>
       </div>
     `
   }
@@ -1437,6 +1444,45 @@
     renderMiniCal()
   }
 
+  let vistaCalDetalle = 'calendario'
+
+  function setVistaCal(vista) {
+    vistaCalDetalle = vista
+    document.getElementById('btn-vista-cal').style.background = vista === 'calendario' ? 'var(--accent-dim)' : ''
+    document.getElementById('btn-vista-cal').style.color = vista === 'calendario' ? 'var(--accent)' : ''
+    document.getElementById('btn-vista-tl2').style.background = vista === 'timeline' ? 'var(--accent-dim)' : ''
+    document.getElementById('btn-vista-tl2').style.color = vista === 'timeline' ? 'var(--accent)' : ''
+    document.getElementById('mini-cal-prev').style.display = vista === 'calendario' ? '' : 'none'
+    document.getElementById('mini-cal-next').style.display = vista === 'calendario' ? '' : 'none'
+    document.getElementById('mini-cal-label').textContent = vista === 'timeline' ? 'Línea de tiempo' : ''
+    document.getElementById('mini-cal-calendario').style.display = vista === 'calendario' ? 'block' : 'none'
+    document.getElementById('mini-cal-timeline').style.display = vista === 'timeline' ? 'block' : 'none'
+    if (vista === 'timeline') renderMiniTimeline()
+    else renderMiniCal()
+  }
+
+  function renderMiniTimeline() {
+    const TIPO_COLOR = { 'Contrato': '#bf5af2', 'Entrega': 'var(--blue)', 'Publicar': 'var(--success)', 'Reporte': 'var(--warning)', 'Boleta': 'var(--warning)', 'Pago': 'var(--danger)' }
+    const sorted = [...miniCalEventos].sort((a,b) => a.fecha.localeCompare(b.fecha))
+    const hoy = new Date().toISOString().split('T')[0]
+    const container = document.getElementById('mini-cal-timeline')
+    container.innerHTML = sorted.map((e, i) => {
+      const isPast = e.fecha < hoy
+      const isToday = e.fecha === hoy
+      const color = TIPO_COLOR[e.label] || 'var(--muted)'
+      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;${i < sorted.length-1 ? 'border-bottom:1px solid var(--border)' : ''}">
+        <div style="width:28px;height:28px;border-radius:50%;background:${isPast ? color+'22' : color+'33'};border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:${color}">
+          ${isPast ? '✓' : isToday ? '●' : '○'}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:${isPast ? 'var(--muted)' : 'var(--text)'}">${e.label}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(e.fecha)}</div>
+        </div>
+        ${isToday ? '<span class="badge badge-accent" style="font-size:10px">Hoy</span>' : ''}
+      </div>`
+    }).join('')
+  }
+
   function miniCalCambiarMes(delta) {
     miniCalMonth += delta
     if (miniCalMonth > 11) { miniCalMonth = 0; miniCalYear++ }
@@ -1446,7 +1492,8 @@
 
   function renderMiniCal() {
     const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    document.getElementById('mini-cal-label').textContent = MESES[miniCalMonth] + ' ' + miniCalYear
+    const labelEl = document.getElementById('mini-cal-label')
+    if (labelEl) labelEl.textContent = MESES[miniCalMonth] + ' ' + miniCalYear
 
     const hoy = new Date()
     const primerDia = new Date(miniCalYear, miniCalMonth, 1)
