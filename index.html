@@ -1,538 +1,550 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>FlowInfluencer</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f0f13;
-      --surface: #18181f;
-      --surface2: #21212c;
-      --border: #2a2a38;
-      --border2: #35354a;
-      --text: #f0f0f5;
-      --muted: #8888aa;
+      --black: #0a0a0a;
+      --white: #ffffff;
+      --off: #f7f7f7;
+      --border: #e8e8e8;
+      --border-dark: #d0d0d0;
+      --text: #0a0a0a;
+      --muted: #888888;
+      --light: #f0f0f0;
       --accent: #c8ff3e;
-      --accent-dim: #c8ff3e22;
-      --accent-text: #0f1a00;
-      --danger: #ff4d6d;
-      --danger-dim: #ff4d6d22;
-      --warning: #ffb340;
-      --warning-dim: #ffb34022;
-      --success: #3effa0;
-      --success-dim: #3effa022;
-      --blue: #4d9fff;
-      --blue-dim: #4d9fff22;
-      --radius: 10px;
-      --radius-sm: 6px;
+      --accent-text: #1a2a00;
+      --danger: #ff3b3b;
+      --warning: #ff9500;
+      --success: #00c853;
+      --blue: #0066ff;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --nav-h: 60px;
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--bg);
+      background: var(--white);
       color: var(--text);
       min-height: 100vh;
       font-size: 14px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* LAYOUT */
-    .shell { display: flex; min-height: 100vh; }
+    /* ── LAYOUT ── */
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
 
-    .sidebar {
-      width: 220px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 20px 12px;
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
+    /* ── TOP BAR ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: var(--nav-h);
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
     }
-
     .logo {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: -0.5px;
-      padding: 4px 8px 20px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
+      font-size: 16px; font-weight: 900; letter-spacing: -0.5px;
+      color: var(--black);
     }
-    .logo span { color: var(--text); }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 10px;
-      border-radius: var(--radius-sm);
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
-      border: none;
-      background: none;
-      width: 100%;
-      text-align: left;
-    }
-    .nav-item:hover { background: var(--surface2); color: var(--text); }
-    .nav-item.active { background: var(--accent-dim); color: var(--accent); }
-    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-    .nav-section { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 16px 10px 6px; }
-
-    .main { margin-left: 220px; flex: 1; padding: 28px 32px; }
-
-    /* HEADER */
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-    .page-title { font-size: 20px; font-weight: 600; color: var(--text); }
-    .page-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 14px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      border: none; transition: all 0.15s;
-    }
-    .btn-primary { background: var(--accent); color: var(--accent-text); }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
-    .btn-ghost:hover { border-color: var(--muted); }
-
-    /* STATS */
-    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .stat-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 18px;
-    }
-    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .stat-val { font-size: 26px; font-weight: 600; line-height: 1; }
-    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .stat-accent { color: var(--accent); }
-    .stat-warning { color: var(--warning); }
-    .stat-danger { color: var(--danger); }
-    .stat-success { color: var(--success); }
-
-    /* ALERT */
-    .alert {
-      background: var(--warning-dim); border: 1px solid var(--warning);
-      border-radius: var(--radius); padding: 12px 16px;
-      display: flex; gap: 12px; align-items: flex-start;
-      margin-bottom: 24px;
-    }
-    .alert-icon { color: var(--warning); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-    .alert-title { font-size: 13px; font-weight: 600; color: var(--warning); margin-bottom: 2px; }
-    .alert-text { font-size: 12px; color: var(--text); opacity: 0.8; line-height: 1.5; }
-
-    /* TABLE */
-    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      padding: 11px 16px; text-align: left;
-      font-size: 11px; font-weight: 600; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: var(--surface2); }
-    tbody td { padding: 13px 16px; font-size: 13px; }
-
-    .brand-cell { display: flex; align-items: center; gap: 10px; }
-    .brand-logo {
-      width: 32px; height: 32px; border-radius: 8px;
+    .logo-dot { color: var(--accent); background: var(--black); padding: 1px 4px; border-radius: 4px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--black); color: var(--accent);
+      font-size: 11px; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 600; flex-shrink: 0;
     }
-    .brand-name { font-weight: 500; color: var(--text); }
-    .brand-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
-    .badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 9px; border-radius: 20px;
-      font-size: 11px; font-weight: 500; white-space: nowrap;
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-top: var(--nav-h);
+      margin-bottom: 70px;
+      padding: 24px 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      width: 100%;
     }
-    .badge-green { background: var(--success-dim); color: var(--success); }
-    .badge-amber { background: var(--warning-dim); color: var(--warning); }
-    .badge-blue { background: var(--blue-dim); color: var(--blue); }
-    .badge-red { background: var(--danger-dim); color: var(--danger); }
-    .badge-gray { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-    .badge-accent { background: var(--accent-dim); color: var(--accent); }
 
-    .amount { font-weight: 600; color: var(--text); }
-    .date-text { color: var(--muted); font-size: 12px; }
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 70px;
+      background: var(--white);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 8px;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; padding: 8px 4px;
+      border: none; background: none; cursor: pointer;
+      color: var(--muted); transition: color 0.15s;
+      border-radius: var(--radius-sm);
+    }
+    .nav-item.active { color: var(--black); }
+    .nav-item svg { width: 20px; height: 20px; }
+    .nav-label { font-size: 10px; font-weight: 500; }
 
-    /* LOADING */
-    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
-    .loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite; margin: 0 2px; }
-    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
-
-    /* SCREENS */
+    /* ── SCREENS ── */
     .screen { display: none; }
     .screen.active { display: block; }
 
-    /* MODAL */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s;
-    }
-    .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal {
-      background: var(--surface); border: 1px solid var(--border2);
-      border-radius: 14px; padding: 24px; width: 500px; max-width: 95vw;
-      max-height: 90vh; overflow-y: auto;
-    }
-    .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
-    .form-group { margin-bottom: 16px; }
-    .form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; font-weight: 500; }
-    .form-input, .form-select {
-      width: 100%; padding: 9px 12px; background: var(--surface2);
-      border: 1px solid var(--border2); border-radius: var(--radius-sm);
-      color: var(--text); font-size: 13px; font-family: inherit;
-      transition: border-color 0.15s;
-    }
-    .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
-    .form-select option { background: var(--surface2); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--black); }
+    .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
 
-    /* DETAIL */
-    .back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; cursor: pointer; margin-bottom: 20px; border: none; background: none; transition: color 0.15s; }
-    .back-btn:hover { color: var(--text); }
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s; text-decoration: none;
+    }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-accent { background: var(--accent); color: var(--accent-text); }
+    .btn-ghost { background: transparent; color: var(--text); border: 1.5px solid var(--border-dark); }
+    .btn-ghost:hover { border-color: var(--black); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-full { width: 100%; }
+
+    /* ── STATS ── */
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--off); border-radius: var(--radius);
+      padding: 16px; position: relative; overflow: hidden;
+    }
+    .stat-card.dark { background: var(--black); }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-card.dark .stat-label { color: #666; }
+    .stat-val { font-size: 24px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; }
+    .stat-card.dark .stat-val { color: var(--accent); }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .stat-card.dark .stat-sub { color: #555; }
+    .stat-card.span2 { grid-column: span 2; }
+
+    /* ── RESUMEN EJECUTIVO ── */
+    .resumen-card {
+      background: var(--black); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 20px;
+    }
+    .resumen-text { font-size: 15px; color: #ccc; line-height: 1.7; }
+    .resumen-text strong { color: var(--white); }
+    .resumen-text .hi { color: var(--accent); font-weight: 700; }
+
+    /* ── CHARTS ── */
+    .chart-card {
+      background: var(--off); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 16px;
+    }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .chart-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .chart-select {
+      font-size: 11px; padding: 4px 8px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-family: inherit;
+    }
+
+    /* ── ALERT ── */
+    .alert {
+      border-radius: var(--radius); padding: 14px 16px;
+      margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .alert-warning { background: #fff8ed; border: 1px solid #ffcc00; }
+    .alert-title { font-size: 13px; font-weight: 700; }
+    .alert-warning .alert-title { color: #a06000; }
+    .alert-text { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+
+    /* ── CAMP LIST ── */
+    .camp-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .camp-card {
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 14px 16px; cursor: pointer; transition: border-color 0.15s;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .camp-card:hover { border-color: var(--black); }
+    .camp-card:active { background: var(--off); }
+    .camp-logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800; flex-shrink: 0;
+    }
+    .camp-info { flex: 1; min-width: 0; }
+    .camp-name { font-size: 14px; font-weight: 700; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .camp-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .camp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .camp-amount { font-size: 14px; font-weight: 700; color: var(--black); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 8px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .badge-black { background: var(--black); color: var(--white); }
+    .badge-accent { background: var(--accent); color: var(--accent-text); }
+    .badge-gray { background: var(--light); color: var(--muted); }
+    .badge-red { background: #fff0f0; color: var(--danger); border: 1px solid #ffcccc; }
+    .badge-green { background: #f0fff4; color: var(--success); border: 1px solid #b3f0c8; }
+    .badge-blue { background: #f0f5ff; color: var(--blue); border: 1px solid #c0d8ff; }
+    .badge-amber { background: #fff8ed; color: var(--warning); border: 1px solid #ffd580; }
+
+    /* ── SECTION HEADER ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+
+    /* ── LOADING ── */
+    .loading { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
+    .loading-dots { display: flex; justify-content: center; gap: 4px; margin-top: 12px; }
+    .loading-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--black); animation: bounce 0.8s infinite alternate; }
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { from { opacity: 0.2; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+    /* ── EMPTY ── */
+    .empty { text-align: center; padding: 48px 20px; }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 700; color: var(--black); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+    /* ── DETAIL ── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); font-size: 13px; font-weight: 500;
+      background: none; border: none; cursor: pointer; margin-bottom: 20px;
+      transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--black); }
+    .back-btn svg { width: 16px; height: 16px; }
 
     .detail-header {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px;
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      margin-bottom: 20px;
     }
-    .detail-brand { display: flex; align-items: center; gap: 14px; }
-    .detail-logo { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 600; }
-    .detail-title { font-size: 18px; font-weight: 600; color: var(--text); }
-    .detail-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .detail-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .detail-logo {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; flex-shrink: 0;
+    }
+    .detail-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: var(--black); }
+    .detail-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 
-    .info-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 16px; }
-    .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-    .info-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-    .info-val { font-size: 15px; font-weight: 600; color: var(--text); }
-    .info-sub-text { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .info-card { background: var(--off); border-radius: var(--radius-sm); padding: 12px 14px; }
+    .info-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .info-val { font-size: 15px; font-weight: 700; color: var(--black); }
+    .info-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
+    /* ── TIMELINE ── */
     .tl { display: flex; flex-direction: column; }
     .tl-item { display: flex; gap: 14px; position: relative; }
-    .tl-item:not(:last-child)::before { content:''; position:absolute; left:13px; top:28px; bottom:0; width:1px; background:var(--border); }
-    .tl-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 2px; }
-    .tl-done { background: var(--success-dim); color: var(--success); border: 1px solid var(--success); }
-    .tl-active { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
-    .tl-pending { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-    .tl-body { flex: 1; padding-bottom: 20px; }
-    .tl-name { font-size: 13px; font-weight: 500; color: var(--text); }
-    .tl-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .tl-item:not(:last-child)::before { content:''; position:absolute; left:13px; top:28px; bottom:0; width:1.5px; background:var(--border); }
+    .tl-dot { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; margin-top:2px; border: 2px solid; }
+    .tl-done { background: var(--black); border-color: var(--black); color: var(--white); }
+    .tl-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .tl-pending { background: var(--white); border-color: var(--border-dark); color: var(--muted); }
+    .tl-body { flex:1; padding-bottom:18px; }
+    .tl-name { font-size:13px; font-weight:600; color:var(--black); }
+    .tl-date { font-size:11px; color:var(--muted); margin-top:2px; }
 
-    /* COBROS */
-    .cobro-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px;
+    /* ── ACTION STEPS ── */
+    .action-section { margin-top: 16px; }
+    .action-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .action-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
     }
-    .cobro-card.urgent { border-color: var(--danger); }
-    .cobro-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .cobro-name { font-size: 14px; font-weight: 600; color: var(--text); }
-    .cobro-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .cobro-amount { font-size: 18px; font-weight: 600; }
-    .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin: 10px 0 6px; }
-    .progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
-    .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+    .action-step:last-child { border-bottom: none; }
+    .action-step-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; border: 2px solid; }
+    .as-done { background: var(--black); border-color: var(--black); color: white; }
+    .as-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .as-pending { background: var(--white); border-color: var(--border-dark); color: var(--muted); }
+    .action-step-info { flex: 1; }
+    .action-step-name { font-size: 13px; font-weight: 600; color: var(--black); }
+    .action-step-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .action-btn {
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap;
+      font-family: inherit;
+    }
+    .ab-primary { background: var(--black); color: white; }
+    .ab-ghost { background: var(--off); color: var(--text); border: 1.5px solid var(--border-dark); }
+    .ab-disabled { background: var(--off); color: var(--muted); cursor: not-allowed; }
 
-    /* empty state */
-    .empty { text-align:center; padding: 48px 20px; color: var(--muted); }
-    .empty-icon { font-size: 32px; margin-bottom: 12px; }
-    .empty-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
-    .empty-sub { font-size: 13px; }
-
-
-
-
-    /* CHARTS */
-    .chart-tooltip { background:var(--surface) !important; border:1px solid var(--border2) !important; border-radius:8px !important; padding:8px 12px !important; }
-
-
-    /* MINI CALENDARIO EN FICHA */
-    .mini-cal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:16px; }
+    /* ── MINI CAL ── */
+    .mini-cal { background: var(--off); border-radius: var(--radius); padding: 16px; margin-top: 16px; }
     .mini-cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-    .mini-cal-title { font-size:13px; font-weight:600; color:var(--text); }
-    .mini-cal-btn { background:none; border:1px solid var(--border2); border-radius:4px; color:var(--muted); padding:3px 8px; cursor:pointer; font-size:12px; }
-    .mini-cal-btn:hover { color:var(--text); }
+    .mini-cal-title { font-size:13px; font-weight:700; color:var(--black); }
+    .mini-cal-btn { background:var(--white); border:1.5px solid var(--border-dark); border-radius:6px; color:var(--muted); padding:3px 8px; cursor:pointer; font-size:12px; font-family:inherit; }
+    .mini-cal-btn:hover { color: var(--black); border-color: var(--black); }
     .mini-cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:2px; }
-    .mini-cal-day-label { font-size:9px; color:var(--muted); text-align:center; padding:3px 0; font-weight:600; }
-    .mini-cal-cell { min-height:32px; padding:2px; border-radius:4px; position:relative; }
-    .mini-cal-cell.today { background:var(--accent-dim); }
+    .mini-cal-day-label { font-size:9px; color:var(--muted); text-align:center; padding:3px 0; font-weight:700; }
+    .mini-cal-cell { min-height:34px; padding:2px; border-radius:4px; }
+    .mini-cal-cell.today { background: var(--black); border-radius: 6px; }
+    .mini-cal-cell.today .mini-cal-num { color: var(--accent); font-weight:800; }
     .mini-cal-cell.other-month { opacity:0.3; }
-    .mini-cal-num { font-size:10px; color:var(--muted); text-align:center; line-height:1.8; }
-    .mini-cal-cell.today .mini-cal-num { color:var(--accent); font-weight:700; }
-    .mini-cal-dot { width:100%; padding:1px 2px; border-radius:2px; font-size:8px; font-weight:500; text-align:center; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; }
-    .mini-cal-legend { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+    .mini-cal-num { font-size:10px; color:var(--muted); text-align:center; line-height:2; font-weight:500; }
+    .mini-cal-dot { width:100%; padding:1px 2px; border-radius:2px; font-size:8px; font-weight:700; text-align:center; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mini-cal-legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
     .mini-cal-leg { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--muted); }
     .mini-cal-leg-dot { width:8px; height:8px; border-radius:2px; }
 
-    /* ACCIONES CAMPAÑA */
-    .action-bar { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
-    .action-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:16px; }
-    .action-card-title { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; }
-    .action-step { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
-    .action-step:last-child { border-bottom:none; }
-    .action-step-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
-    .action-step-done { background:var(--success-dim); color:var(--success); }
-    .action-step-active { background:var(--accent-dim); color:var(--accent); }
-    .action-step-pending { background:var(--surface2); color:var(--muted); }
-    .action-step-info { flex:1; }
-    .action-step-name { font-size:13px; font-weight:500; color:var(--text); }
-    .action-step-sub { font-size:11px; color:var(--muted); margin-top:2px; }
-    .btn-action { padding:7px 14px; border-radius:var(--radius-sm); font-size:12px; font-weight:500; border:none; cursor:pointer; white-space:nowrap; }
-    .btn-action-primary { background:var(--accent); color:var(--accent-text); }
-    .btn-action-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border2); }
-    .btn-action-success { background:var(--success-dim); color:var(--success); border:1px solid var(--success); }
-    .btn-action-disabled { background:var(--surface2); color:var(--muted); cursor:not-allowed; opacity:0.5; }
+    /* ── COBROS ── */
+    .cobro-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+    .cobro-card.urgent { border-color: var(--danger); }
+    .cobro-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .cobro-name { font-size: 14px; font-weight: 700; color: var(--black); }
+    .cobro-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .cobro-amount { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 10px 0 5px; }
+    .progress-fill { height: 100%; border-radius: 2px; }
+    .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
 
-    /* REPORTES */
-    .pub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .pub-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-    .pub-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .pub-type { display: flex; align-items: center; gap: 8px; }
-    .pub-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .pub-name { font-size: 13px; font-weight: 600; color: var(--text); }
-    .pub-date { font-size: 11px; color: var(--muted); margin-top: 1px; }
-    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .metric-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 10px; }
-    .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }
-    .metric-val { font-size: 16px; font-weight: 600; color: var(--text); }
-    .metric-val-sm { font-size: 13px; font-weight: 600; color: var(--text); }
-    .export-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .resumen-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; }
-    .resumen-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-    .res-item { text-align: center; }
-    .res-val { font-size: 22px; font-weight: 600; color: var(--accent); }
-    .res-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    /* ── REPORTES ── */
+    .pub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .pub-card { background: var(--off); border-radius: var(--radius-sm); padding: 14px; }
+    .pub-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .pub-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .pub-name { font-size: 12px; font-weight: 700; color: var(--black); margin-top: 2px; }
+    .pub-date { font-size: 10px; color: var(--muted); }
+    .metric-item { margin-bottom: 8px; }
+    .metric-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .metric-val { font-size: 16px; font-weight: 800; color: var(--black); letter-spacing: -0.3px; }
+    .resumen-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .resumen-num { background: var(--black); border-radius: var(--radius-sm); padding: 14px; }
+    .resumen-num .metric-label { color: #666; }
+    .resumen-num .metric-val { color: var(--accent); }
+    .export-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 
-    /* CALENDAR */
-    .cal-toggle { display:flex; gap:6px; }
-    .cal-toggle-btn { padding:6px 14px; border-radius:var(--radius-sm); border:1px solid var(--border2); background:var(--surface2); color:var(--muted); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.15s; }
-    .cal-toggle-btn.active { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
-    .cal-nav-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .cal-month-label { font-size:16px; font-weight:600; color:var(--text); }
-    .cal-nav-btn { padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--border2); background:var(--surface2); color:var(--muted); font-size:13px; cursor:pointer; }
-    .cal-nav-btn:hover { color:var(--text); }
-    .cal-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; }
-    .cal-day-label { font-size:11px; color:var(--muted); text-align:center; padding:6px 0; font-weight:600; }
-    .cal-cell { min-height:80px; padding:6px; border-radius:6px; border:1px solid var(--border); background:var(--surface); cursor:default; }
-    .cal-cell.today { border-color:var(--accent); }
-    .cal-cell.other-month { opacity:0.4; background:var(--surface2); }
-    .cal-num { font-size:11px; font-weight:600; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; }
-    .cal-cell.today .cal-num { background:var(--accent); color:var(--accent-text); }
-    .cal-ev { font-size:10px; padding:2px 5px; border-radius:3px; margin-bottom:2px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .cal-ev-blue { background:var(--blue-dim); color:var(--blue); }
-    .cal-ev-green { background:var(--success-dim); color:var(--success); }
-    .cal-ev-amber { background:var(--warning-dim); color:var(--warning); }
-    .cal-ev-red { background:var(--danger-dim); color:var(--danger); }
-    .cal-ev-purple { background:#bf5af222; color:#bf5af2; }
-    .tl-camp-header { display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; cursor:pointer; transition:border-color 0.15s; }
-    .tl-camp-header:hover { border-color:var(--accent); }
-    .tl-camp-logo { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; flex-shrink:0; }
-    .tl-camp-name { font-size:13px; font-weight:500; color:var(--text); }
-    .tl-camp-sub { font-size:11px; color:var(--muted); margin-top:1px; }
-    .tl-events { padding:0 0 16px 42px; display:flex; flex-direction:column; gap:8px; }
-    .tl-ev-row { display:flex; align-items:center; gap:10px; }
-    .tl-ev-date { font-size:11px; color:var(--muted); width:90px; flex-shrink:0; }
-    .tl-ev-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .tl-ev-label { font-size:12px; color:var(--text); }
-    .cal-legend { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
-    .leg-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
-    .leg-dot { width:8px; height:8px; border-radius:2px; }
+    /* ── AGENCIAS ── */
+    .agencia-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
+    .agencia-card:hover { border-color: var(--black); }
+    .agencia-name { font-size: 15px; font-weight: 700; color: var(--black); }
+    .agencia-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .agencia-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .ag-stat { background: var(--off); border-radius: var(--radius-sm); padding: 10px 12px; }
+    .ag-stat-val { font-size: 16px; font-weight: 800; color: var(--black); }
+    .ag-stat-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
+
+    /* ── MODALS ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--white); border-radius: 20px 20px 0 0;
+      padding: 24px 20px 36px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto;
+      transform: translateY(20px); transition: transform 0.25s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-handle { width: 36px; height: 4px; background: var(--border-dark); border-radius: 2px; margin: 0 auto 20px; }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.3px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+    .form-input, .form-select {
+      width: 100%; padding: 11px 14px;
+      background: var(--off); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-size: 14px; font-family: inherit; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--black); background: var(--white); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; }
+
+    /* ── FLOR AGENTE ── */
+    .flor-card {
+      background: var(--black); border-radius: var(--radius);
+      padding: 20px; margin-bottom: 16px;
+    }
+    .flor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .flor-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-text); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .flor-name { font-size: 14px; font-weight: 700; color: var(--white); }
+    .flor-status { font-size: 11px; color: var(--accent); }
+    .ok-card { background: #1a1a1a; border: 1px solid #333; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; }
+    .ok-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+    .ok-detail { font-size: 12px; color: #aaa; margin-bottom: 12px; line-height: 1.5; }
+    .ok-actions { display: flex; gap: 8px; }
+    .ok-btn { flex: 1; padding: 8px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; border: none; cursor: pointer; font-family: inherit; }
+    .ok-yes { background: var(--accent); color: var(--accent-text); }
+    .ok-no { background: #2a2a2a; color: #aaa; }
+
+    /* ── RESPONSIVE DESKTOP ── */
+    @media (min-width: 768px) {
+      .main { padding: 32px 40px; margin-bottom: 0; margin-top: 60px; max-width: 900px; }
+      .bottom-nav { display: none; }
+      .topbar { padding: 0 40px; }
+      .desk-nav { display: flex !important; align-items: center; gap: 4px; }
+      .stat-row { grid-template-columns: repeat(4, 1fr); }
+      .pub-grid { grid-template-columns: repeat(3, 1fr); }
+      .form-row { grid-template-columns: 1fr 1fr; }
+      .modal { border-radius: 16px; max-width: 480px; margin: auto; }
+      .modal-overlay { align-items: center; }
+      .modal { transform: scale(0.95); }
+      .modal-overlay.open .modal { transform: scale(1); }
+    }
+
+    /* Desktop nav in topbar */
+    .desk-nav { display: none; }
+    .desk-nav-btn {
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: none; background: none; color: var(--muted); transition: all 0.15s;
+      font-family: inherit;
+    }
+    .desk-nav-btn:hover { color: var(--black); }
+    .desk-nav-btn.active { background: var(--black); color: var(--white); }
+
+    /* ── UTILS ── */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .text-muted { color: var(--muted); }
+    .text-danger { color: var(--danger); }
+    .text-success { color: var(--success); }
+    .text-warning { color: var(--warning); }
+    .fw-bold { font-weight: 700; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
   </style>
 </head>
 <body>
+<div class="app">
 
-<div class="shell">
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="logo">Flow<span>Influencer</span></div>
-
-    <button class="nav-item active" onclick="showScreen('dashboard', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Dashboard
-    </button>
-    <button class="nav-item" onclick="showScreen('campanas', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      Campañas
-    </button>
-    <button class="nav-item" onclick="showScreen('cobros', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      Cobros
-    </button>
-    <button class="nav-item" onclick="showScreen('calendario', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Calendario
-    </button>
-    <button class="nav-item" onclick="showScreen('agencias', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Agencias
-    </button>
-    <button class="nav-item" onclick="showScreen('reportes', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Reportes
-    </button>
-
-    <div class="nav-section">Agente</div>
-    <button class="nav-item" onclick="showScreen('agente', this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-      Flor IA
-    </button>
-  </aside>
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="logo">Flow<span class="logo-dot">F</span></div>
+    <nav class="desk-nav" id="desk-nav">
+      <button class="desk-nav-btn active" onclick="showScreen('dashboard',this,'desk')">Inicio</button>
+      <button class="desk-nav-btn" onclick="showScreen('campanas',this,'desk')">Campañas</button>
+      <button class="desk-nav-btn" onclick="showScreen('cobros',this,'desk')">Cobros</button>
+      <button class="desk-nav-btn" onclick="showScreen('reportes',this,'desk')">Reportes</button>
+      <button class="desk-nav-btn" onclick="showScreen('calendario',this,'desk')">Calendario</button>
+      <button class="desk-nav-btn" onclick="showScreen('agencias',this,'desk')">Agencias</button>
+      <button class="desk-nav-btn" onclick="showScreen('agente',this,'desk')">Flor</button>
+    </nav>
+    <div class="topbar-right">
+      <div class="avatar" id="user-avatar">SD</div>
+    </div>
+  </header>
 
   <!-- MAIN -->
   <main class="main">
 
     <!-- DASHBOARD -->
     <div class="screen active" id="screen-dashboard">
-      <div class="page-header">
-        <div>
-          <div class="page-title" id="dash-greeting">Mi negocio</div>
-          <div class="page-sub" id="dash-año">2026</div>
+      <div class="resumen-card">
+        <div id="resumen-ejecutivo" class="resumen-text">
+          <span style="color:#555">Cargando...</span>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-campana')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          Nueva campaña
-        </button>
       </div>
 
-      <!-- KPIs principales -->
-      <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:20px">
-        <div class="stat-card" style="border-left:3px solid var(--accent)">
+      <div class="stat-row">
+        <div class="stat-card dark span2">
           <div class="stat-label">Facturado este año</div>
-          <div class="stat-val stat-accent" id="kpi-anual">—</div>
-          <div class="stat-sub" id="kpi-anual-sub">cargando...</div>
+          <div class="stat-val" id="kpi-anual">—</div>
+          <div class="stat-sub" id="kpi-anual-sub"></div>
         </div>
-        <div class="stat-card" style="border-left:3px solid var(--warning)">
-          <div class="stat-label">Pendiente de cobro</div>
-          <div class="stat-val stat-warning" id="kpi-pendiente">—</div>
-          <div class="stat-sub" id="kpi-pendiente-sub">cargando...</div>
+        <div class="stat-card">
+          <div class="stat-label">Por cobrar</div>
+          <div class="stat-val text-warning" id="kpi-pendiente">—</div>
+          <div class="stat-sub" id="kpi-pendiente-sub"></div>
         </div>
-        <div class="stat-card" style="border-left:3px solid var(--danger)">
-          <div class="stat-label">Pagos atrasados</div>
-          <div class="stat-val stat-danger" id="kpi-atrasado">—</div>
-          <div class="stat-sub" id="kpi-atrasado-sub">cargando...</div>
-        </div>
-      </div>
-
-      <!-- Resumen ejecutivo texto -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px">
-        <div id="resumen-ejecutivo" style="font-size:15px;color:var(--text);line-height:1.7">
-          <span style="color:var(--muted);font-size:13px">Cargando resumen...</span>
+        <div class="stat-card">
+          <div class="stat-label">Atrasados</div>
+          <div class="stat-val text-danger" id="kpi-atrasado">—</div>
+          <div class="stat-sub" id="kpi-atrasado-sub"></div>
         </div>
       </div>
 
-      <!-- Gráfico por marca -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div class="table-wrap" style="padding:20px">
-          <div class="section-header" style="margin-bottom:12px">
-            <div class="section-title">Ingresos por marca</div>
-            <select style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted)" id="chart-marca-grupo" onchange="renderChartMarca()">
-              <option value="marca">Por marca</option>
-              <option value="agencia">Por agencia</option>
-            </select>
-          </div>
-          <canvas id="chart-marca" height="200"></canvas>
-        </div>
-        <div class="table-wrap" style="padding:20px">
-          <div class="section-header" style="margin-bottom:12px">
-            <div class="section-title">Pagado y por cobrar</div>
-            <select style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted)" id="chart-cobro-periodo" onchange="renderChartCobro()">
-              <option value="mes">Por mes</option>
-              <option value="semana">Por semana</option>
-            </select>
-          </div>
-          <canvas id="chart-cobro" height="200"></canvas>
+      <div id="alert-bloqueo" style="display:none" class="alert alert-warning">
+        <div>⚠</div>
+        <div>
+          <div class="alert-title">Bloqueo de categoría</div>
+          <div class="alert-text" id="alert-bloqueo-text"></div>
         </div>
       </div>
 
-      <!-- Campañas activas -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Ingresos</div>
+          <select class="chart-select" id="chart-marca-grupo" onchange="renderChartMarca()">
+            <option value="marca">Por marca</option>
+            <option value="agencia">Por agencia</option>
+          </select>
+        </div>
+        <canvas id="chart-marca" height="180"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Pagado y por cobrar</div>
+          <select class="chart-select" id="chart-cobro-periodo" onchange="renderChartCobro()">
+            <option value="mes">Por mes</option>
+            <option value="semana">Por semana</option>
+          </select>
+        </div>
+        <canvas id="chart-cobro" height="160"></canvas>
+      </div>
+
       <div class="section-header">
         <div class="section-title">Campañas activas</div>
-        <span id="dash-activas-count" class="badge badge-accent"></span>
+        <span id="dash-activas-count" class="badge badge-black"></span>
       </div>
-      <div class="table-wrap">
-        <div id="dash-campanas-loading" class="loading">
-          <span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>
-        </div>
-        <table id="dash-campanas-table" style="display:none">
-          <thead>
-            <tr><th>Campaña</th><th>Estado</th><th>Publicación</th><th>Monto</th><th>Cobro</th></tr>
-          </thead>
-          <tbody id="dash-campanas-body"></tbody>
-        </table>
-        <div id="dash-campanas-empty" class="empty" style="display:none">
-          <div class="empty-icon">📋</div>
-          <div class="empty-title">Sin campañas activas</div>
-          <div class="empty-sub">Creá tu primera campaña para empezar</div>
-        </div>
+      <div id="dash-campanas-loading" class="loading">
+        <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+      </div>
+      <div class="camp-list" id="dash-campanas-list"></div>
+      <div id="dash-campanas-empty" class="empty" style="display:none">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">Sin campañas activas</div>
+        <div class="empty-sub">Sube un contrato para crear tu primera campaña</div>
+        <button class="btn btn-primary" onclick="openModal('modal-campana')">+ Nueva campaña</button>
       </div>
     </div>
 
     <!-- CAMPAÑAS -->
     <div class="screen" id="screen-campanas">
       <div id="view-lista-campanas">
-        <div class="page-header">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
             <div class="page-title">Campañas</div>
-            <div class="page-sub">Todas tus campañas en un lugar</div>
+            <div class="page-sub">Todas tus campañas</div>
           </div>
-          <button class="btn btn-primary" onclick="openModal('modal-campana')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            Nueva campaña
-          </button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-campana')">+ Nueva</button>
         </div>
-        <div class="table-wrap">
-          <div id="campanas-loading" class="loading">
-            <span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>
-          </div>
-          <table id="campanas-table" style="display:none">
-            <thead>
-              <tr>
-                <th>Campaña</th>
-                <th>Agencia</th>
-                <th>Estado</th>
-                <th>Publicación</th>
-                <th>Monto</th>
-              </tr>
-            </thead>
-            <tbody id="campanas-body"></tbody>
-          </table>
-          <div id="campanas-empty" class="empty" style="display:none">
-            <div class="empty-icon">📋</div>
-            <div class="empty-title">Sin campañas todavía</div>
-            <div class="empty-sub">Creá tu primera campaña arriba</div>
-          </div>
+        <div id="campanas-loading" class="loading">
+          <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+        </div>
+        <div class="camp-list" id="campanas-list"></div>
+        <div id="campanas-empty" class="empty" style="display:none">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Sin campañas</div>
+          <div class="empty-sub">Crea tu primera campaña</div>
+          <button class="btn btn-primary" onclick="openModal('modal-campana')">+ Nueva campaña</button>
         </div>
       </div>
-
-      <!-- DETALLE CAMPAÑA -->
       <div id="view-detalle-campana" style="display:none">
         <button class="back-btn" onclick="volverLista()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-          Volver a campañas
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Volver
         </button>
         <div id="detalle-content"></div>
       </div>
@@ -540,181 +552,188 @@
 
     <!-- COBROS -->
     <div class="screen" id="screen-cobros">
-      <div class="page-header">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
         <div>
           <div class="page-title">Cobros</div>
-          <div class="page-sub">Seguimiento de facturas y pagos</div>
+          <div class="page-sub">Facturas y pagos</div>
         </div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('modal-factura')">+ Factura</button>
       </div>
-      <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-        <div class="stat-card">
-          <div class="stat-label">Pendiente de cobro</div>
-          <div class="stat-val stat-warning" id="cobro-pendiente">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Vence pronto</div>
-          <div class="stat-val stat-danger" id="cobro-vence">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Cobrado (30 días)</div>
-          <div class="stat-val stat-success" id="cobro-cobrado">—</div>
-        </div>
-      </div>
-      <div class="section-header" style="margin-bottom:12px">
-        <div class="section-title">Facturas activas</div>
-        <button class="btn btn-ghost" onclick="openModal('modal-factura')">+ Nueva factura</button>
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-label">Pendiente</div><div class="stat-val text-warning" id="cobro-pendiente">—</div></div>
+        <div class="stat-card"><div class="stat-label">Vence pronto</div><div class="stat-val text-danger" id="cobro-vence">—</div></div>
+        <div class="stat-card"><div class="stat-label">Cobrado</div><div class="stat-val text-success" id="cobro-cobrado">—</div></div>
       </div>
       <div id="cobros-content">
-        <div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
+        <div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+      </div>
+    </div>
+
+    <!-- REPORTES -->
+    <div class="screen" id="screen-reportes">
+      <div class="page-header">
+        <div class="page-title">Reportes</div>
+        <div class="page-sub">Métricas por campaña</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <select class="form-select" id="rep-marca-select" onchange="filtrarReportes()" style="flex:1;min-width:120px">
+          <option value="">Todas las marcas</option>
+        </select>
+        <select class="form-select" id="rep-agencia-select" onchange="filtrarReportes()" style="flex:1;min-width:120px">
+          <option value="">Todas las agencias</option>
+        </select>
+        <select class="form-select" id="rep-campana-select" onchange="loadReportes()" style="flex:2;min-width:160px">
+          <option value="">Selecciona campaña</option>
+        </select>
+      </div>
+      <div id="rep-content">
+        <div class="empty">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">Elige una campaña</div>
+          <div class="empty-sub">Filtra y selecciona para ver las métricas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div class="screen" id="screen-calendario">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="page-title">Calendario</div>
+          <div class="page-sub">Tus fechas importantes</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary btn-sm active" id="btn-vista-mes" onclick="setVistaCalendario('mes')">Mes</button>
+          <button class="btn btn-ghost btn-sm" id="btn-vista-tl" onclick="setVistaCalendario('timeline')">Timeline</button>
+        </div>
+      </div>
+      <div id="cal-vista-mes">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="font-size:15px;font-weight:700" id="cal-mes-label"></span>
+          <div style="display:flex;gap:6px">
+            <button class="mini-cal-btn" onclick="cambiarMes(-1)">‹</button>
+            <button class="mini-cal-btn" onclick="cambiarMes(1)">›</button>
+          </div>
+        </div>
+        <div class="mini-cal-grid" style="margin-bottom:3px">
+          <div class="mini-cal-day-label">L</div><div class="mini-cal-day-label">M</div>
+          <div class="mini-cal-day-label">X</div><div class="mini-cal-day-label">J</div>
+          <div class="mini-cal-day-label">V</div><div class="mini-cal-day-label">S</div>
+          <div class="mini-cal-day-label">D</div>
+        </div>
+        <div class="mini-cal-grid" id="cal-grid-days"></div>
+        <div class="mini-cal-legend" style="margin-top:12px">
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:#bf5af2"></div>Contrato</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--blue)"></div>Entrega</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicación</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte</div>
+          <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Pago</div>
+        </div>
+      </div>
+      <div id="cal-vista-timeline" style="display:none">
+        <div id="tl-campanas-content">
+          <div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+        </div>
       </div>
     </div>
 
     <!-- AGENCIAS -->
     <div class="screen" id="screen-agencias">
-      <div class="page-header">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
         <div>
-          <div class="page-title">Agencias y ejecutivos</div>
+          <div class="page-title">Agencias</div>
           <div class="page-sub">Tu red de contactos</div>
         </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modal-agencia')">+ Agencia</button>
+      </div>
+      <div id="agencias-loading" class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>
+      <div id="agencias-list"></div>
+      <div id="agencias-empty" class="empty" style="display:none">
+        <div class="empty-icon">🤝</div>
+        <div class="empty-title">Sin agencias</div>
+        <div class="empty-sub">Agrega la primera agencia</div>
         <button class="btn btn-primary" onclick="openModal('modal-agencia')">+ Nueva agencia</button>
       </div>
-      <div class="table-wrap">
-        <div id="agencias-loading" class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
-        <table id="agencias-table" style="display:none">
-          <thead><tr><th>Agencia</th><th>Ejecutivos</th><th>Campañas</th></tr></thead>
-          <tbody id="agencias-body"></tbody>
-        </table>
-        <div id="agencias-empty" class="empty" style="display:none">
-          <div class="empty-icon">🤝</div>
-          <div class="empty-title">Sin agencias todavía</div>
-          <div class="empty-sub">Agregá la primera agencia con la que trabajás</div>
-        </div>
-      </div>
     </div>
 
-
-    <!-- REPORTES -->
-    <div class="screen" id="screen-reportes">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Reportes</div>
-          <div class="page-sub">Métricas de tus publicaciones</div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-        <div style="flex:1;min-width:160px">
-          <label class="form-label" style="display:block;margin-bottom:6px">Marca</label>
-          <select class="form-select" id="rep-marca-select" onchange="filtrarReportes()">
-            <option value="">Todas las marcas</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:160px">
-          <label class="form-label" style="display:block;margin-bottom:6px">Agencia</label>
-          <select class="form-select" id="rep-agencia-select" onchange="filtrarReportes()">
-            <option value="">Todas las agencias</option>
-          </select>
-        </div>
-        <div style="flex:2;min-width:200px">
-          <label class="form-label" style="display:block;margin-bottom:6px">Campaña</label>
-          <select class="form-select" id="rep-campana-select" onchange="loadReportes()">
-            <option value="">Selecciona una campaña</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="rep-content">
-        <div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
-      </div>
-    </div>
-
-    <!-- AGENTE -->
+    <!-- AGENTE FLOR -->
     <div class="screen" id="screen-agente">
       <div class="page-header">
-        <div>
-          <div class="page-title">Flor · Agente IA</div>
-          <div class="page-sub">flor@flowinfluencer.app · Próximamente en WhatsApp</div>
-        </div>
-        <span class="badge badge-accent">Beta</span>
+        <div class="page-title">Flor</div>
+        <div class="page-sub">Tu asistente de campañas</div>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;text-align:center;color:var(--muted)">
-        <div style="font-size:48px;margin-bottom:16px">🤖</div>
-        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Flor está casi lista</div>
-        <div style="font-size:13px;line-height:1.6;max-width:400px;margin:0 auto">Cuando conectes WhatsApp, Flor te va a escribir recordatorios, enviar reportes y hacer seguimiento de cobros con un solo OK tuyo.</div>
-      </div>
-    </div>
-
-
-    <!-- CALENDARIO -->
-    <div class="screen" id="screen-calendario">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Calendario</div>
-          <div class="page-sub">Todas tus fechas importantes en un lugar</div>
-        </div>
-        <div class="cal-toggle">
-          <button class="cal-toggle-btn active" id="btn-vista-mes" onclick="setVistaCalendario('mes')">Mes</button>
-          <button class="cal-toggle-btn" id="btn-vista-tl" onclick="setVistaCalendario('timeline')">Timeline</button>
-        </div>
-      </div>
-
-      <!-- VISTA MES -->
-      <div id="cal-vista-mes">
-        <div class="cal-nav-row">
-          <span class="cal-month-label" id="cal-mes-label">Julio 2025</span>
-          <div style="display:flex;gap:6px">
-            <button class="cal-nav-btn" onclick="cambiarMes(-1)">&#8249;</button>
-            <button class="cal-nav-btn" onclick="cambiarMes(1)">&#8250;</button>
+      <div class="flor-card">
+        <div class="flor-header">
+          <div class="flor-avatar">F</div>
+          <div>
+            <div class="flor-name">Flor · Asistente IA</div>
+            <div class="flor-status">● flor@flowinfluencer.app</div>
           </div>
         </div>
-        <div class="cal-grid" id="cal-grid-labels">
-          <div class="cal-day-label">Lun</div>
-          <div class="cal-day-label">Mar</div>
-          <div class="cal-day-label">Mié</div>
-          <div class="cal-day-label">Jue</div>
-          <div class="cal-day-label">Vie</div>
-          <div class="cal-day-label">Sáb</div>
-          <div class="cal-day-label">Dom</div>
-        </div>
-        <div class="cal-grid" id="cal-grid-days" style="margin-top:3px"></div>
-        <div class="cal-legend">
-          <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Contenido/Entrega</div>
-          <div class="leg-item"><div class="leg-dot" style="background:var(--success)"></div>Publicación</div>
-          <div class="leg-item"><div class="leg-dot" style="background:var(--warning)"></div>Reporte/Boleta</div>
-          <div class="leg-item"><div class="leg-dot" style="background:var(--danger)"></div>Vencimiento pago</div>
-          <div class="leg-item"><div class="leg-dot" style="background:#bf5af2"></div>Contrato</div>
+        <div class="ok-card">
+          <div class="ok-title">Acción pendiente</div>
+          <div class="ok-detail">El reporte de <strong style="color:white">Entel — Fibra Hogar</strong> está listo. ¿Lo envío a Rodrigo Campos?</div>
+          <div class="ok-actions">
+            <button class="ok-btn ok-yes">Sí, enviar</button>
+            <button class="ok-btn ok-no">Revisar antes</button>
+          </div>
         </div>
       </div>
-
-      <!-- VISTA TIMELINE -->
-      <div id="cal-vista-timeline" style="display:none">
-        <div id="tl-campanas-content">
-          <div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>
-        </div>
+      <div style="background:var(--off);border-radius:var(--radius);padding:24px;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">💬</div>
+        <div style="font-size:15px;font-weight:700;color:var(--black);margin-bottom:6px">WhatsApp próximamente</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.6;max-width:300px;margin:0 auto">Cuando conectes WhatsApp, Flor te escribirá recordatorios y ejecutará tareas con un solo OK.</div>
       </div>
     </div>
+
   </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('dashboard',this,'mobile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span class="nav-label">Inicio</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('campanas',this,'mobile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span class="nav-label">Campañas</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('cobros',this,'mobile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span class="nav-label">Cobros</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('reportes',this,'mobile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+      <span class="nav-label">Reportes</span>
+    </button>
+    <button class="nav-item" onclick="showScreen('agente',this,'mobile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <span class="nav-label">Flor</span>
+    </button>
+  </nav>
+
 </div>
 
-<!-- MODAL NUEVA CAMPAÑA -->
+<!-- MODALS -->
 <div class="modal-overlay" id="modal-campana">
   <div class="modal">
+    <div class="modal-handle"></div>
     <div class="modal-title">Nueva campaña</div>
+    <div class="form-group">
+      <label class="form-label">Nombre *</label>
+      <input class="form-input" id="nc-nombre" type="text" placeholder="ej. Samsung Galaxy S25"/>
+    </div>
     <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Nombre de campaña *</label>
-        <input class="form-input" id="nc-nombre" type="text" placeholder="ej. Samsung Galaxy S25 Launch" />
-      </div>
       <div class="form-group">
         <label class="form-label">Marca</label>
         <select class="form-select" id="nc-marca"></select>
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Agencia</label>
         <select class="form-select" id="nc-agencia"></select>
       </div>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Estado</label>
         <select class="form-select" id="nc-estado">
@@ -727,12 +746,12 @@
           <option value="cerrada">Cerrada</option>
         </select>
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Monto (CLP)</label>
-        <input class="form-input" id="nc-monto" type="number" placeholder="950000" />
+        <input class="form-input" id="nc-monto" type="number" placeholder="950000"/>
       </div>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label class="form-label">Forma de pago</label>
         <select class="form-select" id="nc-forma-pago">
@@ -742,20 +761,18 @@
           <option value="Anticipado">Anticipado</option>
         </select>
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Fecha de publicación</label>
-        <input class="form-input" id="nc-fecha-pub" type="date" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">Derechos</label>
-        <input class="form-input" id="nc-derechos" type="text" placeholder="ej. Reel IG, Story IG" />
+        <label class="form-label">Publicación</label>
+        <input class="form-input" id="nc-fecha-pub" type="date"/>
       </div>
     </div>
     <div class="form-group">
+      <label class="form-label">Derechos</label>
+      <input class="form-input" id="nc-derechos" type="text" placeholder="Reel IG, Story IG, TikTok"/>
+    </div>
+    <div class="form-group">
       <label class="form-label">Notas</label>
-      <input class="form-input" id="nc-notas" type="text" placeholder="Detalles adicionales..." />
+      <input class="form-input" id="nc-notas" type="text" placeholder="Detalles adicionales..."/>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-campana')">Cancelar</button>
@@ -764,13 +781,13 @@
   </div>
 </div>
 
-<!-- MODAL NUEVA AGENCIA -->
 <div class="modal-overlay" id="modal-agencia">
   <div class="modal">
+    <div class="modal-handle"></div>
     <div class="modal-title">Nueva agencia</div>
     <div class="form-group">
-      <label class="form-label">Nombre de la agencia *</label>
-      <input class="form-input" id="na-nombre" type="text" placeholder="ej. NOT MEDIA" />
+      <label class="form-label">Nombre *</label>
+      <input class="form-input" id="na-nombre" type="text" placeholder="ej. NOT MEDIA"/>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-agencia')">Cancelar</button>
@@ -779,9 +796,9 @@
   </div>
 </div>
 
-<!-- MODAL NUEVA FACTURA -->
 <div class="modal-overlay" id="modal-factura">
   <div class="modal">
+    <div class="modal-handle"></div>
     <div class="modal-title">Nueva factura</div>
     <div class="form-group">
       <label class="form-label">Campaña *</label>
@@ -790,20 +807,20 @@
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Monto (CLP) *</label>
-        <input class="form-input" id="nf-monto" type="number" placeholder="950000" />
+        <input class="form-input" id="nf-monto" type="number" placeholder="950000"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Fecha emisión</label>
-        <input class="form-input" id="nf-emision" type="date" />
+        <label class="form-label">Emisión</label>
+        <input class="form-input" id="nf-emision" type="date"/>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Fecha vencimiento</label>
-      <input class="form-input" id="nf-vencimiento" type="date" />
+      <label class="form-label">Vencimiento</label>
+      <input class="form-input" id="nf-vencimiento" type="date"/>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-factura')">Cancelar</button>
-      <button class="btn btn-primary" onclick="crearFactura()">Registrar factura</button>
+      <button class="btn btn-primary" onclick="crearFactura()">Registrar</button>
     </div>
   </div>
 </div>
@@ -817,52 +834,58 @@
   const { createClient } = supabase
   const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-  // HELPERS
   const fmt = n => n ? '$' + Number(n).toLocaleString('es-CL') : '—'
   const fmtDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-CL', { day:'numeric', month:'short', year:'numeric' }) : '—'
 
-  const ESTADO_BADGE = {
-    por_iniciar: ['badge-gray', 'Por iniciar'],
-    en_curso: ['badge-blue', 'En curso'],
-    en_aprobacion: ['badge-amber', 'En aprobación'],
-    publicada: ['badge-green', 'Publicada'],
-    en_reporte: ['badge-gray', 'En reporte'],
-    en_cobro: ['badge-accent', 'En cobro'],
-    cerrada: ['badge-gray', 'Cerrada'],
+  const ESTADO_MAP = {
+    por_iniciar: ['badge-gray','Por iniciar'],
+    en_curso: ['badge-blue','En curso'],
+    en_aprobacion: ['badge-amber','En aprobación'],
+    publicada: ['badge-green','Publicada'],
+    en_reporte: ['badge-gray','En reporte'],
+    en_cobro: ['badge-black','En cobro'],
+    cerrada: ['badge-gray','Cerrada'],
   }
 
-  const COLORES = ['#4d9fff22|#4d9fff','#3effa022|#3effa0','#ffb34022|#ffb340','#c8ff3e22|#c8ff3e','#ff4d6d22|#ff4d6d','#bf5af222|#bf5af2']
-  function colorForLetter(letter) {
-    const idx = (letter || 'A').charCodeAt(0) % COLORES.length
-    const [bg, fg] = COLORES[idx].split('|')
-    return { bg, fg }
-  }
+  const COLORS = ['#0066ff','#00c853','#ff9500','#ff3b3b','#bf5af2','#c8ff3e','#ff2d55','#5ac8fa']
 
   function badgeHtml(estado) {
-    const [cls, label] = ESTADO_BADGE[estado] || ['badge-gray', estado]
+    const [cls, label] = ESTADO_MAP[estado] || ['badge-gray', estado]
     return `<span class="badge ${cls}">${label}</span>`
   }
 
-  function brandLogo(nombre) {
-    const letter = (nombre || '?')[0].toUpperCase()
-    const { bg, fg } = colorForLetter(letter)
-    return `<div class="brand-logo" style="background:${bg};color:${fg}">${letter}</div>`
+  function colorForLetter(letter) {
+    const idx = (letter||'A').charCodeAt(0) % COLORS.length
+    return COLORS[idx]
   }
 
-  // NAVIGATION
-  function showScreen(id, btn) {
+  function campLogo(nombre, size=40) {
+    const letter = (nombre||'?')[0].toUpperCase()
+    const color = colorForLetter(letter)
+    return `<div class="camp-logo" style="background:${color}22;color:${color};width:${size}px;height:${size}px">${letter}</div>`
+  }
+
+  // ── NAVIGATION ──────────────────────────────────────────────
+  function showScreen(id, btn, source) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'))
     document.getElementById('screen-' + id).classList.add('active')
-    if (btn) btn.classList.add('active')
+
+    if (source === 'mobile') {
+      document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'))
+      if (btn) btn.classList.add('active')
+    } else {
+      document.querySelectorAll('.desk-nav-btn').forEach(b => b.classList.remove('active'))
+      if (btn) btn.classList.add('active')
+    }
+
     if (id === 'campanas') loadCampanas()
     if (id === 'cobros') loadCobros()
     if (id === 'agencias') loadAgencias()
-    if (id === 'calendario') loadCalendario()
     if (id === 'reportes') initReportes()
+    if (id === 'calendario') loadCalendario()
   }
 
-  // MODALS
+  // ── MODALS ──────────────────────────────────────────────────
   function openModal(id) {
     if (id === 'modal-campana') loadSelects()
     if (id === 'modal-factura') loadCampanasSelect()
@@ -873,20 +896,21 @@
     el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open') })
   })
 
-  // ── DASHBOARD ──────────────────────────────────────────────
-  let chartSemanal = null, chartMarca = null, chartCobro = null
+  // ── DASHBOARD ───────────────────────────────────────────────
+  let chartMarca = null, chartCobro = null
   let dashData = { campanas: [], facturas: [] }
+  const CHART_COLORS = COLORS
 
-  const CHART_COLORS = ['#c8ff3e','#4d9fff','#3effa0','#ffb340','#bf5af2','#ff4d6d','#ff9f0a','#30d158']
-  const CHART_COLORS_DIM = ['#c8ff3e44','#4d9fff44','#3effa044','#ffb34044','#bf5af244','#ff4d6d44']
-
-  function getChartDefaults() {
+  function getChartOpts() {
     return {
-      plugins: { legend: { labels: { color: '#8888aa', font: { family: 'Inter', size: 11 } } },
-        tooltip: { backgroundColor: '#18181f', borderColor: '#2a2a38', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8888aa', padding: 10, cornerRadius: 8 } },
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#888', font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 8 } },
+        tooltip: { backgroundColor: '#0a0a0a', titleColor: '#fff', bodyColor: '#888', padding: 10, cornerRadius: 8, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y || ctx.parsed.x || 0)}` } }
+      },
       scales: {
-        x: { grid: { color: '#2a2a38' }, ticks: { color: '#8888aa', font: { size: 10 } } },
-        y: { grid: { color: '#2a2a38' }, ticks: { color: '#8888aa', font: { size: 10 }, callback: v => '$' + (v/1000000 >= 1 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) } }
+        x: { grid: { color: '#e8e8e8' }, ticks: { color: '#888', font: { size: 10, family: 'Inter' } } },
+        y: { grid: { color: '#e8e8e8' }, ticks: { color: '#888', font: { size: 10, family: 'Inter' }, callback: v => v >= 1000000 ? '$'+(v/1000000).toFixed(1)+'M' : v >= 1000 ? '$'+(v/1000).toFixed(0)+'K' : '$'+v } }
       }
     }
   }
@@ -900,130 +924,44 @@
     dashData = { campanas: campanas || [], facturas: facturas || [] }
 
     const hoy = new Date()
-    const añoActual = hoy.getFullYear()
-
-    // KPI: facturado este año
-    const facturadoAño = (facturas || [])
-      .filter(f => new Date(f.fecha_emision).getFullYear() === añoActual)
-      .reduce((s, f) => s + (f.monto || 0), 0)
+    const año = hoy.getFullYear()
+    const facturadoAño = (facturas||[]).filter(f => new Date(f.fecha_emision+'T12:00:00').getFullYear()===año).reduce((s,f)=>s+(f.monto||0),0)
+    const nCamps = (campanas||[]).filter(c => new Date(c.created_at).getFullYear()===año).length
     document.getElementById('kpi-anual').textContent = fmt(facturadoAño)
-    const nCamps = (campanas || []).filter(c => new Date(c.created_at).getFullYear() === añoActual).length
-    document.getElementById('kpi-anual-sub').textContent = `${nCamps} campañas en ${añoActual}`
+    document.getElementById('kpi-anual-sub').textContent = `${nCamps} campañas en ${año}`
 
-    // KPI: pendiente
-    const pendientes = (facturas || []).filter(f => f.estado === 'emitida')
-    const totalPendiente = pendientes.reduce((s, f) => s + (f.monto || 0), 0)
-    document.getElementById('kpi-pendiente').textContent = fmt(totalPendiente)
-    document.getElementById('kpi-pendiente-sub').textContent = `${pendientes.length} facturas emitidas`
+    const pendientes = (facturas||[]).filter(f=>f.estado==='emitida')
+    document.getElementById('kpi-pendiente').textContent = fmt(pendientes.reduce((s,f)=>s+(f.monto||0),0))
+    document.getElementById('kpi-pendiente-sub').textContent = `${pendientes.length} facturas`
 
-    // KPI: atrasados
-    const atrasadas = (facturas || []).filter(f => f.estado === 'emitida' && f.fecha_vencimiento && new Date(f.fecha_vencimiento) < hoy)
-    const totalAtrasado = atrasadas.reduce((s, f) => s + (f.monto || 0), 0)
+    const atrasadas = (facturas||[]).filter(f=>f.estado==='emitida'&&f.fecha_vencimiento&&new Date(f.fecha_vencimiento+'T12:00:00')<hoy)
+    const totalAtrasado = atrasadas.reduce((s,f)=>s+(f.monto||0),0)
     document.getElementById('kpi-atrasado').textContent = fmt(totalAtrasado)
-    document.getElementById('kpi-atrasado-sub').textContent = atrasadas.length > 0 ? `${atrasadas.length} factura${atrasadas.length > 1 ? 's' : ''} vencida${atrasadas.length > 1 ? 's' : ''}` : 'Al día'
+    document.getElementById('kpi-atrasado-sub').textContent = atrasadas.length>0 ? `${atrasadas.length} vencida${atrasadas.length>1?'s':''}` : 'Al día ✓'
 
-    if (influencer) {
-      document.getElementById('dash-greeting').textContent = `Hola, ${influencer.nombre.split(' ')[0]} 👋`
-    }
+    renderResumenEjecutivo(campanas||[], facturas||[])
 
-    // Campañas activas
-    const activas = (campanas || []).filter(c => !['cerrada'].includes(c.estado))
-    document.getElementById('dash-activas-count').textContent = activas.length + ' activas'
-    renderDashTable(activas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8), facturas || [])
+    const activas = (campanas||[]).filter(c=>c.estado!=='cerrada')
+    document.getElementById('dash-activas-count').textContent = activas.length
+    renderCampList(activas.slice(0,8), 'dash-campanas-list', 'dash-campanas-loading', 'dash-campanas-empty')
 
-    // Resumen ejecutivo
-    renderResumenEjecutivo(campanas, facturas)
-    // Gráficos
     renderChartMarca()
     renderChartCobro()
   }
 
   function renderResumenEjecutivo(campanas, facturas) {
-    const hoy = new Date()
-    const año = hoy.getFullYear()
-    const campañasAño = (campanas || []).filter(c => new Date(c.created_at).getFullYear() === año)
-    const marcasUnicas = new Set(campañasAño.map(c => c.marcas?.nombre).filter(Boolean))
-    const agenciasUnicas = new Set(campañasAño.map(c => c.agencias?.nombre).filter(Boolean))
-    const totalAño = (facturas || [])
-      .filter(f => new Date(f.fecha_emision + 'T12:00:00').getFullYear() === año)
-      .reduce((s, f) => s + (f.monto || 0), 0)
-    const pendiente = (facturas || [])
-      .filter(f => f.estado === 'emitida')
-      .reduce((s, f) => s + (f.monto || 0), 0)
+    const año = new Date().getFullYear()
+    const campsAño = campanas.filter(c => new Date(c.created_at).getFullYear()===año)
+    const marcas = new Set(campsAño.map(c=>c.marcas?.nombre).filter(Boolean))
+    const agencias = new Set(campsAño.map(c=>c.agencias?.nombre).filter(Boolean))
+    const total = facturas.filter(f=>new Date(f.fecha_emision+'T12:00:00').getFullYear()===año).reduce((s,f)=>s+(f.monto||0),0)
+    const pendiente = facturas.filter(f=>f.estado==='emitida').reduce((s,f)=>s+(f.monto||0),0)
 
-    const el = document.getElementById('resumen-ejecutivo')
-    if (!el) return
+    const hi = t => `<span class="hi">${t}</span>`
+    const bo = t => `<strong>${t}</strong>`
 
-    const accent = (txt) => `<span style="color:var(--accent);font-weight:600">${txt}</span>`
-    const warn = (txt) => `<span style="color:var(--warning);font-weight:600">${txt}</span>`
-
-    el.innerHTML = `
-      Ya llevamos <span style="font-weight:600">${campañasAño.length} campaña${campañasAño.length !== 1 ? 's' : ''}</span>
-      con ${accent(marcasUnicas.size + ' marca' + (marcasUnicas.size !== 1 ? 's' : ''))}
-      y ${accent(agenciasUnicas.size + ' agencia' + (agenciasUnicas.size !== 1 ? 's' : ''))} en ${año}.
-      Has generado ${accent(fmt(totalAño))} este año.
-      ${pendiente > 0 ? `Tienes ${warn(fmt(pendiente))} pendiente de cobro.` : '<span style="color:var(--success);font-weight:600">Todo al día con los cobros.</span>'}
-    `
-  }
-
-  function renderChartSemanal() {
-    const { campanas, facturas } = dashData
-    const hoy = new Date()
-
-    // 7 semanas: -3 a +3
-    const semanas = []
-    for (let i = -3; i <= 3; i++) {
-      const inicio = new Date(hoy)
-      const dow = inicio.getDay() === 0 ? 6 : inicio.getDay() - 1
-      inicio.setDate(inicio.getDate() - dow + i * 7)
-      inicio.setHours(0,0,0,0)
-      const fin = new Date(inicio)
-      fin.setDate(fin.getDate() + 6)
-      fin.setHours(23,59,59,999)
-      const d = inicio.getDate(), m = inicio.toLocaleString('es-CL',{month:'short'})
-      semanas.push({ inicio, fin, label: i === 0 ? 'Esta semana' : `${d} ${m}` })
-    }
-
-    // Obtener todas las marcas/agencias únicas
-    const agrupado = document.getElementById('chart-marca-grupo').value === 'agencia'
-    const entidades = [...new Set(campanas.map(c => agrupado ? (c.agencias?.nombre||'Directo') : (c.marcas?.nombre||'Sin marca')))]
-
-    const datasets = entidades.map((ent, i) => {
-      const color = CHART_COLORS[i % CHART_COLORS.length]
-      const data = semanas.map(s => {
-        return campanas
-          .filter(c => (agrupado ? (c.agencias?.nombre||'Directo') : (c.marcas?.nombre||'Sin marca')) === ent)
-          .reduce((sum, c) => {
-            const f = facturas.find(f => f.campana_id === c.id)
-            if (!f) return sum
-            const fechaRef = f.estado === 'pagada' ? f.fecha_emision : f.fecha_vencimiento
-            if (!fechaRef) return sum
-            const d = new Date(fechaRef + 'T12:00:00')
-            if (d >= s.inicio && d <= s.fin) return sum + f.monto
-            return sum
-          }, 0)
-      })
-      return { label: ent, data, backgroundColor: color + '88', borderColor: color, borderWidth: 1, stack: 'stack', borderRadius: 3 }
-    }).filter(ds => ds.data.some(v => v > 0))
-
-    const ctx = document.getElementById('chart-semanal').getContext('2d')
-    if (chartSemanal) chartSemanal.destroy()
-    chartSemanal = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: semanas.map(s => s.label), datasets },
-      options: {
-        ...getChartDefaults(),
-        responsive: true,
-        plugins: {
-          ...getChartDefaults().plugins,
-          legend: { labels: { color: '#8888aa', font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 8 } }
-        },
-        scales: {
-          x: { ...getChartDefaults().scales.x, stacked: true },
-          y: { ...getChartDefaults().scales.y, stacked: true }
-        }
-      }
-    })
+    document.getElementById('resumen-ejecutivo').innerHTML =
+      `${bo(campsAño.length)} campaña${campsAño.length!==1?'s':''} con ${hi(marcas.size+' marca'+(marcas.size!==1?'s':''))} y ${hi(agencias.size+' agencia'+(agencias.size!==1?'s':''))} en ${año}. Has generado ${hi(fmt(total))} este año.${pendiente>0 ? ` Tienes <span style="color:#ffb340;font-weight:700">${fmt(pendiente)}</span> por cobrar.` : ' <span style="color:#00c853;font-weight:700">Todo cobrado.</span>'}`
   }
 
   function renderChartMarca() {
@@ -1031,232 +969,136 @@
     const agrupado = document.getElementById('chart-marca-grupo').value === 'agencia'
     const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     const hoy = new Date()
-
-    // Últimos 12 meses como labels del eje X
     const meses = []
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
-      meses.push({
-        mes: d.getMonth(),
-        año: d.getFullYear(),
-        label: MESES[d.getMonth()] + (d.getMonth() === 0 || i === 11 ? ' ' + String(d.getFullYear()).slice(2) : '')
-      })
+    for (let i=11;i>=0;i--) {
+      const d = new Date(hoy.getFullYear(), hoy.getMonth()-i, 1)
+      meses.push({ mes:d.getMonth(), año:d.getFullYear(), label: MESES[d.getMonth()]+(d.getMonth()===0||i===11?' '+String(d.getFullYear()).slice(2):'') })
     }
-
-    // Entidades únicas (marcas o agencias)
-    const entidades = [...new Set(
-      campanas
-        .filter(c => facturas.some(f => f.campana_id === c.id))
-        .map(c => agrupado ? (c.agencias?.nombre||'Directo') : (c.marcas?.nombre||'Sin marca'))
-    )]
-
-    // Para cada entidad, un dataset con un valor por mes
-    const datasets = entidades.map((ent, i) => {
-      const color = CHART_COLORS[i % CHART_COLORS.length]
-      const data = meses.map(({ mes, año }) => {
-        // Campañas de esta entidad
-        const campsEnt = campanas.filter(c =>
-          (agrupado ? (c.agencias?.nombre||'Directo') : (c.marcas?.nombre||'Sin marca')) === ent
-        )
-        // Sumar facturas de esas campañas emitidas en este mes
-        return campsEnt.reduce((sum, c) => {
-          const f = facturas.find(f2 => f2.campana_id === c.id && f2.fecha_emision)
-          if (!f) return sum
-          const fd = new Date(f.fecha_emision + 'T12:00:00')
-          return fd.getMonth() === mes && fd.getFullYear() === año ? sum + (f.monto || 0) : sum
-        }, 0)
-      })
-      return {
-        label: ent,
-        data,
-        backgroundColor: color + '99',
-        borderColor: color,
-        borderWidth: 1,
-        stack: 'stack',
-        borderRadius: 2
-      }
-    }).filter(ds => ds.data.some(v => v > 0))
+    const entidades = [...new Set(campanas.filter(c=>facturas.some(f=>f.campana_id===c.id)).map(c=>agrupado?(c.agencias?.nombre||'Directo'):(c.marcas?.nombre||'Sin marca')))]
+    const datasets = entidades.map((ent,i) => ({
+      label: ent,
+      data: meses.map(({mes,año}) => campanas.filter(c=>(agrupado?(c.agencias?.nombre||'Directo'):(c.marcas?.nombre||'Sin marca'))===ent).reduce((sum,c)=>{
+        const f=facturas.find(f2=>f2.campana_id===c.id&&f2.fecha_emision)
+        if(!f) return sum
+        const fd=new Date(f.fecha_emision+'T12:00:00')
+        return fd.getMonth()===mes&&fd.getFullYear()===año?sum+(f.monto||0):sum
+      },0)),
+      backgroundColor: CHART_COLORS[i%CHART_COLORS.length]+'99',
+      borderColor: CHART_COLORS[i%CHART_COLORS.length],
+      borderWidth: 1, stack:'s', borderRadius:3
+    })).filter(d=>d.data.some(v=>v>0))
 
     const ctx = document.getElementById('chart-marca').getContext('2d')
     if (chartMarca) chartMarca.destroy()
     chartMarca = new Chart(ctx, {
-      type: 'bar',
-      data: { labels: meses.map(m => m.label), datasets },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { labels: { color: '#8888aa', font: { family: 'Inter', size: 10 }, boxWidth: 10, padding: 6 } },
-          tooltip: {
-            backgroundColor: '#18181f', borderColor: '#2a2a38', borderWidth: 1,
-            titleColor: '#f0f0f5', bodyColor: '#8888aa', padding: 10, cornerRadius: 8,
-            callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('es-CL')}` }
-          }
-        },
-        scales: {
-          x: { stacked: true, grid: { color: '#2a2a38' }, ticks: { color: '#8888aa', font: { size: 10 } } },
-          y: { stacked: true, grid: { color: '#2a2a38' }, ticks: { color: '#8888aa', font: { size: 10 }, callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) } }
-        }
-      }
+      type:'bar',
+      data:{ labels:meses.map(m=>m.label), datasets },
+      options:{ ...getChartOpts(), scales:{ x:{...getChartOpts().scales.x,stacked:true}, y:{...getChartOpts().scales.y,stacked:true} } }
     })
   }
 
   function renderChartCobro() {
     const { facturas } = dashData
-    const porSemana = document.getElementById('chart-cobro-periodo').value === 'semana'
+    const porSemana = document.getElementById('chart-cobro-periodo').value==='semana'
     const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     const hoy = new Date()
-
-    let labels, pagado, pendiente
+    let labels=[], pagado=[], pendiente=[]
 
     if (porSemana) {
-      labels = []; pagado = []; pendiente = []
-      for (let i = -5; i <= 0; i++) {
-        const inicio = new Date(hoy)
-        const dow = inicio.getDay() === 0 ? 6 : inicio.getDay() - 1
-        inicio.setDate(inicio.getDate() - dow + i * 7)
-        inicio.setHours(0,0,0,0)
-        const fin = new Date(inicio); fin.setDate(fin.getDate() + 6); fin.setHours(23,59,59,999)
-        labels.push(i === 0 ? 'Esta sem.' : `${inicio.getDate()} ${MESES[inicio.getMonth()]}`)
-        pagado.push((facturas||[]).filter(f => f.estado==='pagada' && f.fecha_emision && new Date(f.fecha_emision+'T12:00:00') >= inicio && new Date(f.fecha_emision+'T12:00:00') <= fin).reduce((s,f)=>s+f.monto,0))
-        pendiente.push((facturas||[]).filter(f => f.estado==='emitida' && f.fecha_emision && new Date(f.fecha_emision+'T12:00:00') >= inicio && new Date(f.fecha_emision+'T12:00:00') <= fin).reduce((s,f)=>s+f.monto,0))
+      for (let i=-5;i<=0;i++) {
+        const inicio=new Date(hoy); const dow=inicio.getDay()===0?6:inicio.getDay()-1
+        inicio.setDate(inicio.getDate()-dow+i*7); inicio.setHours(0,0,0,0)
+        const fin=new Date(inicio); fin.setDate(fin.getDate()+6); fin.setHours(23,59,59,999)
+        labels.push(i===0?'Esta sem.':`${inicio.getDate()} ${MESES[inicio.getMonth()]}`)
+        pagado.push((facturas||[]).filter(f=>f.estado==='pagada'&&f.fecha_emision&&new Date(f.fecha_emision+'T12:00:00')>=inicio&&new Date(f.fecha_emision+'T12:00:00')<=fin).reduce((s,f)=>s+f.monto,0))
+        pendiente.push((facturas||[]).filter(f=>f.estado==='emitida'&&f.fecha_emision&&new Date(f.fecha_emision+'T12:00:00')>=inicio&&new Date(f.fecha_emision+'T12:00:00')<=fin).reduce((s,f)=>s+f.monto,0))
       }
     } else {
-      labels = []; pagado = []; pendiente = []
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
-        labels.push(MESES[d.getMonth()] + (i === 0 || d.getMonth() === 0 ? ' ' + String(d.getFullYear()).slice(2) : ''))
-        const mes = d.getMonth(), año = d.getFullYear()
+      for (let i=5;i>=0;i--) {
+        const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1)
+        labels.push(MESES[d.getMonth()]+(d.getMonth()===0||i===5?' '+String(d.getFullYear()).slice(2):''))
+        const mes=d.getMonth(),año=d.getFullYear()
         pagado.push((facturas||[]).filter(f=>f.estado==='pagada'&&f.fecha_emision&&new Date(f.fecha_emision+'T12:00:00').getMonth()===mes&&new Date(f.fecha_emision+'T12:00:00').getFullYear()===año).reduce((s,f)=>s+f.monto,0))
         pendiente.push((facturas||[]).filter(f=>f.estado==='emitida'&&f.fecha_emision&&new Date(f.fecha_emision+'T12:00:00').getMonth()===mes&&new Date(f.fecha_emision+'T12:00:00').getFullYear()===año).reduce((s,f)=>s+f.monto,0))
       }
     }
 
-    const ctx = document.getElementById('chart-cobro').getContext('2d')
+    const ctx=document.getElementById('chart-cobro').getContext('2d')
     if (chartCobro) chartCobro.destroy()
-    chartCobro = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Pagado', data: pagado, backgroundColor: '#3effa088', borderColor: '#3effa0', borderWidth: 1, borderRadius: 3, stack: 'stack' },
-          { label: 'Por cobrar', data: pendiente, backgroundColor: '#ffb34088', borderColor: '#ffb340', borderWidth: 1, borderRadius: 3, stack: 'stack' }
-        ]
-      },
-      options: {
-        ...getChartDefaults(),
-        responsive: true,
-        scales: {
-          x: { ...getChartDefaults().scales.x, stacked: true },
-          y: { ...getChartDefaults().scales.y, stacked: true }
-        }
-      }
+    chartCobro = new Chart(ctx,{
+      type:'bar',
+      data:{ labels, datasets:[
+        {label:'Pagado',data:pagado,backgroundColor:'#00c85399',borderColor:'#00c853',borderWidth:1,borderRadius:3,stack:'s'},
+        {label:'Por cobrar',data:pendiente,backgroundColor:'#ff950099',borderColor:'#ff9500',borderWidth:1,borderRadius:3,stack:'s'}
+      ]},
+      options:{ ...getChartOpts(), scales:{ x:{...getChartOpts().scales.x,stacked:true}, y:{...getChartOpts().scales.y,stacked:true} } }
     })
   }
 
-  function renderDashTable(campanas, facturas) {
-    document.getElementById('dash-campanas-loading').style.display = 'none'
-    if (!campanas.length) {
-      document.getElementById('dash-campanas-empty').style.display = 'block'
-      return
-    }
-    document.getElementById('dash-campanas-table').style.display = 'table'
-    const tbody = document.getElementById('dash-campanas-body')
-    tbody.innerHTML = campanas.map(c => {
-      const factura = facturas.find(f => f.campana_id === c.id)
-      const estadoCobro = factura ? badgeHtml(factura.estado) : '<span class="badge badge-gray">Sin factura</span>'
-      return `<tr onclick="verDetallePatched('${c.id}')">
-        <td><div class="brand-cell">${brandLogo(c.marcas?.nombre || c.nombre)}
-          <div><div class="brand-name">${c.nombre}</div>
-          <div class="brand-sub">${c.marcas?.nombre || ''} · ${c.agencias?.nombre || 'Directo'}</div></div></div></td>
-        <td>${badgeHtml(c.estado)}</td>
-        <td class="date-text">${fmtDate(c.fecha_publicacion)}</td>
-        <td class="amount">${fmt(c.monto)}</td>
-        <td>${estadoCobro}</td>
-      </tr>`
+  // ── CAMP LIST ───────────────────────────────────────────────
+  function renderCampList(camps, listId, loadingId, emptyId) {
+    if (loadingId) document.getElementById(loadingId).style.display='none'
+    const list = document.getElementById(listId)
+    const empty = emptyId ? document.getElementById(emptyId) : null
+    if (!camps||!camps.length) { list.innerHTML=''; if(empty) empty.style.display='block'; return }
+    if (empty) empty.style.display='none'
+    list.innerHTML = camps.map(c => {
+      const [bcls, blabel] = ESTADO_MAP[c.estado]||['badge-gray',c.estado]
+      return `<div class="camp-card" onclick="verDetallePatched('${c.id}');showScreen('campanas',null,'desk')">
+        ${campLogo(c.marcas?.nombre||c.nombre)}
+        <div class="camp-info">
+          <div class="camp-name">${c.nombre}</div>
+          <div class="camp-meta">${c.marcas?.nombre||'—'} · ${c.agencias?.nombre||'Directo'}</div>
+        </div>
+        <div class="camp-right">
+          <span class="badge ${bcls}">${blabel}</span>
+          <span class="camp-amount">${fmt(c.monto)}</span>
+        </div>
+      </div>`
     }).join('')
   }
 
-  // ── CAMPAÑAS ───────────────────────────────────────────────
+  // ── CAMPAÑAS ────────────────────────────────────────────────
   async function loadCampanas() {
-    document.getElementById('campanas-loading').style.display = 'block'
-    document.getElementById('campanas-table').style.display = 'none'
-    document.getElementById('campanas-empty').style.display = 'none'
-
-    const { data } = await db.from('campanas').select('*, marcas(*), agencias(*)')
-      .order('created_at', { ascending: false })
-
-    document.getElementById('campanas-loading').style.display = 'none'
-    if (!data || !data.length) {
-      document.getElementById('campanas-empty').style.display = 'block'
-      return
-    }
-    document.getElementById('campanas-table').style.display = 'table'
-    document.getElementById('campanas-body').innerHTML = data.map(c => `
-      <tr onclick="verDetallePatched('${c.id}')">
-        <td><div class="brand-cell">${brandLogo(c.marcas?.nombre || c.nombre)}
-          <div><div class="brand-name">${c.nombre}</div>
-          <div class="brand-sub">${(c.derechos || []).join(' · ') || '—'}</div></div></div></td>
-        <td class="brand-sub">${c.agencias?.nombre || 'Directo'}</td>
-        <td>${badgeHtml(c.estado)}</td>
-        <td class="date-text">${fmtDate(c.fecha_publicacion)}</td>
-        <td class="amount">${fmt(c.monto)}</td>
-      </tr>`).join('')
+    document.getElementById('campanas-loading').style.display='block'
+    document.getElementById('campanas-list').innerHTML=''
+    document.getElementById('campanas-empty').style.display='none'
+    const {data} = await db.from('campanas').select('*, marcas(*), agencias(*)').order('created_at',{ascending:false})
+    document.getElementById('campanas-loading').style.display='none'
+    renderCampList(data,'campanas-list',null,'campanas-empty')
   }
 
   async function verDetalle(id) {
-    document.getElementById('view-lista-campanas').style.display = 'none'
-    document.getElementById('view-detalle-campana').style.display = 'block'
-
-    const { data: c } = await db.from('campanas').select('*, marcas(*), agencias(*), ejecutivos(*)').eq('id', id).single()
+    const {data:c} = await db.from('campanas').select('*, marcas(*), agencias(*), ejecutivos(*)').eq('id',id).single()
     if (!c) return
-
-    const { bg, fg } = colorForLetter((c.marcas?.nombre || c.nombre)[0])
-    const derechos = (c.derechos || []).map(d => `<span class="badge badge-gray">${d}</span>`).join(' ')
-
+    const color = colorForLetter((c.marcas?.nombre||c.nombre)[0])
+    const derechos = (c.derechos||[]).map(d=>`<span class="badge badge-gray">${d}</span>`).join(' ')
     const tl = buildTimeline(c)
 
     document.getElementById('detalle-content').innerHTML = `
       <div class="detail-header">
         <div class="detail-brand">
-          <div class="detail-logo" style="background:${bg};color:${fg}">${(c.marcas?.nombre || c.nombre)[0].toUpperCase()}</div>
+          <div class="detail-logo" style="background:${color}22;color:${color}">${(c.marcas?.nombre||c.nombre)[0].toUpperCase()}</div>
           <div>
             <div class="detail-title">${c.nombre}</div>
-            <div class="detail-sub">${c.agencias?.nombre || 'Directo'} · ${c.ejecutivos?.nombre || 'Sin ejecutivo'}</div>
-            <div class="detail-tags" style="margin-top:8px">${derechos || '<span class="badge badge-gray">Sin derechos definidos</span>'}</div>
+            <div class="detail-sub">${c.agencias?.nombre||'Directo'} · ${c.ejecutivos?.nombre||'Sin ejecutivo'}</div>
           </div>
         </div>
-        ${badgeHtml(c.estado)}
+        <div class="detail-tags">${derechos||'<span class="badge badge-gray">Sin derechos</span>'} ${badgeHtml(c.estado)}</div>
       </div>
 
       <div class="info-grid">
-        <div class="info-card">
-          <div class="info-label">Monto</div>
-          <div class="info-val">${fmt(c.monto)}</div>
-          <div class="info-sub-text">${c.monto_extras ? '+ ' + fmt(c.monto_extras) + ' extras' : 'Sin extras'}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">Forma de pago</div>
-          <div class="info-val">${c.forma_pago || '—'}</div>
-          <div class="info-sub-text">Desde entrega de reporte</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">Publicación</div>
-          <div class="info-val">${fmtDate(c.fecha_publicacion)}</div>
-          <div class="info-sub-text">${c.marcas?.nombre || '—'}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">Marca</div>
-          <div class="info-val">${c.marcas?.nombre || '—'}</div>
-          <div class="info-sub-text">${c.marcas?.categoria || '—'}</div>
-        </div>
+        <div class="info-card"><div class="info-label">Monto</div><div class="info-val">${fmt(c.monto)}</div><div class="info-sub">${c.monto_extras?'+ '+fmt(c.monto_extras)+' extras':''}</div></div>
+        <div class="info-card"><div class="info-label">Forma de pago</div><div class="info-val">${c.forma_pago||'—'}</div></div>
+        <div class="info-card"><div class="info-label">Publicación</div><div class="info-val">${fmtDate(c.fecha_publicacion)}</div></div>
+        <div class="info-card"><div class="info-label">Categoría</div><div class="info-val">${c.marcas?.categoria||'—'}</div></div>
       </div>
 
-      <div class="section-header"><div class="section-title">Línea de tiempo</div></div>
-      <div class="table-wrap" style="padding:20px 24px"><div class="tl">${tl}</div></div>
-      ${c.notas ? `<div style="margin-top:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--muted)">${c.notas}</div>` : ''}
+      <div class="section-header"><div class="section-title">Progreso</div></div>
+      <div class="tl">${tl}</div>
 
-      <div class="action-card" style="margin-top:16px">
-        <div class="action-card-title">Acciones de campaña</div>
+      <div class="action-section">
+        <div class="action-title">Acciones</div>
         ${buildAcciones(c)}
       </div>
 
@@ -1264,12 +1106,12 @@
         <div class="mini-cal-nav">
           <span class="mini-cal-title" id="mini-cal-label"></span>
           <div style="display:flex;gap:6px;align-items:center">
-            <div style="display:flex;gap:4px;margin-right:8px">
-              <button class="mini-cal-btn active-view" id="btn-vista-cal" onclick="setVistaCal('calendario')" style="font-size:11px">📅 Calendario</button>
-              <button class="mini-cal-btn" id="btn-vista-tl2" onclick="setVistaCal('timeline')" style="font-size:11px">📋 Timeline</button>
+            <div style="display:flex;gap:4px;margin-right:4px">
+              <button class="mini-cal-btn" id="btn-vista-cal" onclick="setVistaCal('calendario')" style="font-size:11px">📅</button>
+              <button class="mini-cal-btn" id="btn-vista-tl2" onclick="setVistaCal('timeline')" style="font-size:11px">📋</button>
             </div>
-            <button class="mini-cal-btn" id="mini-cal-prev" onclick="miniCalCambiarMes(-1)">&#8249;</button>
-            <button class="mini-cal-btn" id="mini-cal-next" onclick="miniCalCambiarMes(1)">&#8250;</button>
+            <button class="mini-cal-btn" id="mini-cal-prev" onclick="miniCalCambiarMes(-1)">‹</button>
+            <button class="mini-cal-btn" id="mini-cal-next" onclick="miniCalCambiarMes(1)">›</button>
           </div>
         </div>
         <div id="mini-cal-calendario">
@@ -1283,712 +1125,455 @@
           <div class="mini-cal-legend">
             <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:#bf5af2"></div>Contrato</div>
             <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--blue)"></div>Entrega</div>
-            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicación</div>
-            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte/Boleta</div>
-            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Vencimiento pago</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--success)"></div>Publicar</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--warning)"></div>Reporte</div>
+            <div class="mini-cal-leg"><div class="mini-cal-leg-dot" style="background:var(--danger)"></div>Pago</div>
           </div>
         </div>
         <div id="mini-cal-timeline" style="display:none"></div>
       </div>
+      ${c.notas?`<div style="margin-top:12px;padding:12px 14px;background:var(--off);border-radius:var(--radius-sm);font-size:13px;color:var(--muted)">${c.notas}</div>`:''}
     `
   }
 
   function buildTimeline(c) {
+    const estados = ['por_iniciar','en_curso','en_aprobacion','publicada','en_reporte','en_cobro','cerrada']
+    const idx = estados.indexOf(c.estado)
     const steps = [
-      { nombre: 'Contrato recibido', fecha: fmtDate(c.fecha_inicio), done: !!c.fecha_inicio, icon: '📄' },
-      { nombre: 'Contenido en aprobación', fecha: 'Pendiente de confirmación', done: ['en_aprobacion','publicada','en_reporte','en_cobro','cerrada'].includes(c.estado), active: c.estado === 'en_aprobacion', icon: '✋' },
-      { nombre: 'Publicación en redes', fecha: fmtDate(c.fecha_publicacion), done: ['publicada','en_reporte','en_cobro','cerrada'].includes(c.estado), active: c.estado === 'publicada', icon: '📱' },
-      { nombre: 'Reporte de métricas', fecha: '7 días post publicación', done: ['en_cobro','cerrada'].includes(c.estado), active: c.estado === 'en_reporte', icon: '📊' },
-      { nombre: 'Facturación y cobro', fecha: c.forma_pago ? `Pago a ${c.forma_pago}` : 'Pendiente', done: c.estado === 'cerrada', active: c.estado === 'en_cobro', icon: '💳' },
+      {nombre:'Contrato recibido', fecha:fmtDate(c.fecha_inicio), done:idx>=1, active:idx===0},
+      {nombre:'Contenido aprobado', fecha:fmtDate(c.fecha_publicacion), done:idx>=3, active:idx===1||idx===2},
+      {nombre:'Publicación', fecha:fmtDate(c.fecha_publicacion), done:idx>=3, active:false},
+      {nombre:'Reporte entregado', fecha:'7 días post publicación', done:idx>=4, active:idx===3},
+      {nombre:'Cobro', fecha:c.forma_pago?`A ${c.forma_pago}`:'—', done:idx>=5, active:idx===4},
+      {nombre:'Pago recibido', fecha:'', done:idx===6, active:idx===5},
     ]
-    return steps.map((s, i) => {
-      const cls = s.done ? 'tl-done' : s.active ? 'tl-active' : 'tl-pending'
-      return `<div class="tl-item">
-        <div class="tl-dot ${cls}">${s.done ? '✓' : s.icon}</div>
-        <div class="tl-body">
-          <div class="tl-name">${s.nombre}</div>
-          <div class="tl-date">${s.fecha}</div>
-        </div>
-      </div>`
+    return steps.map(s => {
+      const cls = s.done?'tl-done':s.active?'tl-active':'tl-pending'
+      return `<div class="tl-item"><div class="tl-dot ${cls}">${s.done?'✓':s.active?'●':'○'}</div><div class="tl-body"><div class="tl-name">${s.nombre}</div><div class="tl-date">${s.fecha}</div></div></div>`
     }).join('')
-  }
-
-  // Patch verDetalle to also init mini cal
-  const _origVerDetalle = verDetalle
-  async function verDetallePatched(id) {
-    const { data: c2 } = await db.from('campanas').select('*').eq('id', id).single()
-    await verDetalle(id)
-    if (c2) setTimeout(() => initMiniCal(c2), 50)
   }
 
   function buildAcciones(c) {
     const estados = ['por_iniciar','en_curso','en_aprobacion','publicada','en_reporte','en_cobro','cerrada']
     const idx = estados.indexOf(c.estado)
-
     const pasos = [
-      {
-        nombre: 'Contrato recibido',
-        sub: c.fecha_inicio ? 'Leído por Flor · ' + fmtDate(c.fecha_inicio) : 'Pendiente',
-        done: idx >= 1,
-        active: idx === 0,
-        btn: null,
-      },
-      {
-        nombre: 'Contenido aprobado y publicado',
-        sub: c.fecha_publicacion ? 'Fecha: ' + fmtDate(c.fecha_publicacion) : 'Pendiente',
-        done: idx >= 3,
-        active: idx === 1 || idx === 2,
-        btn: idx === 2 ? { label: 'Marcar como publicada', cls: 'btn-action-primary', fn: `cambiarEstado('${c.id}','publicada')` } : null,
-      },
-      {
-        nombre: 'Reporte de métricas enviado',
-        sub: idx >= 4 ? 'Reporte enviado a agencia' : 'Requiere todas las publicaciones cargadas',
-        done: idx >= 4,
-        active: idx === 3,
-        btn: idx === 3
-          ? { label: 'Enviar reporte', cls: 'btn-action-primary', fn: `enviarReporte('${c.id}')` }
-          : idx < 3
-          ? { label: 'Esperando publicaciones', cls: 'btn-action-disabled', fn: null }
-          : null,
-      },
-      {
-        nombre: 'Boleta / Cobro emitido',
-        sub: idx >= 5 ? 'Documento enviado a agencia' : 'Disponible al enviar reporte',
-        done: idx >= 5,
-        active: idx === 4,
-        btn: idx === 4
-          ? { label: 'Cobrar', cls: 'btn-action-primary', fn: `iniciarCobro('${c.id}')` }
-          : idx < 4
-          ? { label: 'Disponible al enviar reporte', cls: 'btn-action-disabled', fn: null }
-          : null,
-      },
-      {
-        nombre: 'Pago recibido',
-        sub: idx === 6 ? 'Campaña cerrada' : 'Pendiente de pago',
-        done: idx === 6,
-        active: idx === 5,
-        btn: idx === 5 ? { label: 'Registrar pago', cls: 'btn-action-ghost', fn: `registrarPago('${c.id}')` } : null,
-      },
+      { nombre:'Contrato recibido', sub:'Datos cargados', done:idx>=1, active:idx===0, btn:null },
+      { nombre:'Contenido aprobado y publicado', sub:fmtDate(c.fecha_publicacion), done:idx>=3, active:idx<=2,
+        btn: idx===2?{label:'Marcar publicada',cls:'ab-primary',fn:`cambiarEstado('${c.id}','publicada')`}:null },
+      { nombre:'Enviar reporte', sub:idx>=4?'Enviado':'Requiere publicación', done:idx>=4, active:idx===3,
+        btn: idx===3?{label:'Enviar reporte',cls:'ab-primary',fn:`enviarReporte('${c.id}')`}:idx<3?{label:'Esperando publicación',cls:'ab-disabled',fn:null}:null },
+      { nombre:'Emitir boleta', sub:idx>=5?'Emitida':'Disponible al enviar reporte', done:idx>=5, active:idx===4,
+        btn: idx===4?{label:'Cobrar',cls:'ab-primary',fn:`iniciarCobro('${c.id}')`}:idx<4?{label:'Disponible al enviar reporte',cls:'ab-disabled',fn:null}:null },
+      { nombre:'Pago recibido', sub:idx===6?'Campaña cerrada':'Pendiente', done:idx===6, active:idx===5,
+        btn: idx===5?{label:'Registrar pago',cls:'ab-ghost',fn:`registrarPago('${c.id}')`}:null },
     ]
-
     return pasos.map(p => {
-      const iconCls = p.done ? 'action-step-done' : p.active ? 'action-step-active' : 'action-step-pending'
-      const icon = p.done ? '✓' : p.active ? '●' : '○'
-      const btnHtml = p.btn
-        ? `<button class="btn-action ${p.btn.cls}" ${p.btn.fn ? `onclick="${p.btn.fn}"` : 'disabled'}>${p.btn.label}</button>`
-        : ''
+      const cls = p.done?'as-done':p.active?'as-active':'as-pending'
+      const btn = p.btn?`<button class="action-btn ${p.btn.cls}" ${p.btn.fn?`onclick="${p.btn.fn}"`:'disabled'}>${p.btn.label}</button>`:''
       return `<div class="action-step">
-        <div class="action-step-icon ${iconCls}">${icon}</div>
-        <div class="action-step-info">
-          <div class="action-step-name">${p.nombre}</div>
-          <div class="action-step-sub">${p.sub}</div>
-        </div>
-        ${btnHtml}
+        <div class="action-step-icon ${cls}">${p.done?'✓':p.active?'●':'○'}</div>
+        <div class="action-step-info"><div class="action-step-name">${p.nombre}</div><div class="action-step-sub">${p.sub}</div></div>
+        ${btn}
       </div>`
     }).join('')
   }
 
-  async function cambiarEstado(id, estado) {
-    await db.from('campanas').update({ estado }).eq('id', id)
-    verDetalle(id)
-    loadDashboard()
-  }
+  async function cambiarEstado(id,estado) { await db.from('campanas').update({estado}).eq('id',id); verDetalle(id); loadDashboard() }
 
   async function enviarReporte(id) {
     if (!confirm('¿Confirmas que Flor envíe el reporte a la agencia?')) return
-    await db.from('campanas').update({ estado: 'en_cobro' }).eq('id', id)
-    await db.from('reportes').update({ enviado: true, fecha_envio: new Date().toISOString() }).eq('campana_id', id)
-    alert('Reporte marcado como enviado. En la versión completa Flor lo envía automáticamente por correo.')
-    verDetalle(id)
-    loadDashboard()
+    await db.from('campanas').update({estado:'en_cobro'}).eq('id',id)
+    await db.from('reportes').update({enviado:true,fecha_envio:new Date().toISOString()}).eq('campana_id',id)
+    alert('Reporte marcado como enviado.')
+    verDetalle(id); loadDashboard()
   }
 
   async function iniciarCobro(id) {
-    const { data: c } = await db.from('campanas').select('*, marcas(*), agencias(*)').eq('id', id).single()
-    const monto = c.monto + (c.monto_extras || 0)
-    const vence = new Date()
-    vence.setDate(vence.getDate() + 30)
-    const { error } = await db.from('facturas').insert({
-      campana_id: id,
-      influencer_id: c.influencer_id,
-      monto,
-      fecha_emision: new Date().toISOString().split('T')[0],
-      fecha_vencimiento: vence.toISOString().split('T')[0],
-      estado: 'emitida',
-    })
-    if (error) return alert('Error: ' + error.message)
-    await db.from('campanas').update({ estado: 'en_cobro' }).eq('id', id)
-    alert(`Factura de ${fmt(monto)} registrada. Vence el ${vence.toLocaleDateString('es-CL')}. En la versión completa Flor la envía a la agencia automáticamente.`)
-    verDetalle(id)
-    loadDashboard()
+    const {data:c} = await db.from('campanas').select('*').eq('id',id).single()
+    const monto = (c.monto||0)+(c.monto_extras||0)
+    const vence = new Date(); vence.setDate(vence.getDate()+30)
+    await db.from('facturas').insert({ campana_id:id, influencer_id:c.influencer_id, monto, fecha_emision:new Date().toISOString().split('T')[0], fecha_vencimiento:vence.toISOString().split('T')[0], estado:'emitida' })
+    await db.from('campanas').update({estado:'en_cobro'}).eq('id',id)
+    alert(`Factura de ${fmt(monto)} registrada. Vence el ${vence.toLocaleDateString('es-CL')}.`)
+    verDetalle(id); loadDashboard()
   }
 
   async function registrarPago(id) {
-    await db.from('facturas').update({ estado: 'pagada' }).eq('campana_id', id)
-    await db.from('campanas').update({ estado: 'cerrada' }).eq('id', id)
+    await db.from('facturas').update({estado:'pagada'}).eq('campana_id',id)
+    await db.from('campanas').update({estado:'cerrada'}).eq('id',id)
     alert('Pago registrado. Campaña cerrada.')
-    verDetalle(id)
-    loadDashboard()
+    verDetalle(id); loadDashboard()
   }
 
-
-  // ── MINI CALENDARIO EN FICHA ───────────────────────────────
-  let miniCalYear = new Date().getFullYear()
-  let miniCalMonth = new Date().getMonth()
-  let miniCalEventos = []
-
-  function initMiniCal(campana) {
-    // Generar eventos de la campaña
-    miniCalEventos = []
-    if (campana.fecha_inicio) miniCalEventos.push({ fecha: campana.fecha_inicio, label: 'Contrato', color: '#bf5af2' })
-    if (campana.fecha_publicacion) {
-      // Entrega 8 días antes
-      const entrega = new Date(campana.fecha_publicacion + 'T12:00:00')
-      entrega.setDate(entrega.getDate() - 8)
-      miniCalEventos.push({ fecha: entrega.toISOString().split('T')[0], label: 'Entrega', color: 'var(--blue)' })
-      miniCalEventos.push({ fecha: campana.fecha_publicacion, label: 'Publicar', color: 'var(--success)' })
-      // Reporte 7 días después
-      const reporte = new Date(campana.fecha_publicacion + 'T12:00:00')
-      reporte.setDate(reporte.getDate() + 7)
-      miniCalEventos.push({ fecha: reporte.toISOString().split('T')[0], label: 'Reporte', color: 'var(--warning)' })
-      miniCalEventos.push({ fecha: reporte.toISOString().split('T')[0], label: 'Boleta', color: 'var(--warning)' })
-      // Pago 30 días después del reporte
-      if (campana.forma_pago && campana.forma_pago.includes('30')) {
-        const pago = new Date(reporte)
-        pago.setDate(pago.getDate() + 30)
-        miniCalEventos.push({ fecha: pago.toISOString().split('T')[0], label: 'Pago', color: 'var(--danger)' })
-      }
-    }
-    // Ir al mes de la publicación si existe
-    if (campana.fecha_publicacion) {
-      const d = new Date(campana.fecha_publicacion + 'T12:00:00')
-      miniCalYear = d.getFullYear()
-      miniCalMonth = d.getMonth()
-    } else {
-      miniCalYear = new Date().getFullYear()
-      miniCalMonth = new Date().getMonth()
-    }
-    renderMiniCal()
+  async function verDetallePatched(id) {
+    document.getElementById('view-lista-campanas').style.display='none'
+    document.getElementById('view-detalle-campana').style.display='block'
+    const {data:c2} = await db.from('campanas').select('*').eq('id',id).single()
+    await verDetalle(id)
+    if (c2) setTimeout(()=>initMiniCal(c2),80)
   }
 
-  let vistaCalDetalle = 'calendario'
+  function volverLista() {
+    document.getElementById('view-lista-campanas').style.display='block'
+    document.getElementById('view-detalle-campana').style.display='none'
+    loadCampanas()
+  }
+
+  // ── MINI CAL ────────────────────────────────────────────────
+  let miniCalYear=new Date().getFullYear(), miniCalMonth=new Date().getMonth(), miniCalEventos=[]
+  let vistaCalDetalle='calendario'
 
   function setVistaCal(vista) {
-    vistaCalDetalle = vista
-    document.getElementById('btn-vista-cal').style.background = vista === 'calendario' ? 'var(--accent-dim)' : ''
-    document.getElementById('btn-vista-cal').style.color = vista === 'calendario' ? 'var(--accent)' : ''
-    document.getElementById('btn-vista-tl2').style.background = vista === 'timeline' ? 'var(--accent-dim)' : ''
-    document.getElementById('btn-vista-tl2').style.color = vista === 'timeline' ? 'var(--accent)' : ''
-    document.getElementById('mini-cal-prev').style.display = vista === 'calendario' ? '' : 'none'
-    document.getElementById('mini-cal-next').style.display = vista === 'calendario' ? '' : 'none'
-    document.getElementById('mini-cal-label').textContent = vista === 'timeline' ? 'Línea de tiempo' : ''
-    document.getElementById('mini-cal-calendario').style.display = vista === 'calendario' ? 'block' : 'none'
-    document.getElementById('mini-cal-timeline').style.display = vista === 'timeline' ? 'block' : 'none'
-    if (vista === 'timeline') renderMiniTimeline()
-    else renderMiniCal()
+    vistaCalDetalle=vista
+    document.getElementById('btn-vista-cal').style.fontWeight=vista==='calendario'?'800':'400'
+    document.getElementById('btn-vista-tl2').style.fontWeight=vista==='timeline'?'800':'400'
+    document.getElementById('mini-cal-prev').style.display=vista==='calendario'?'':'none'
+    document.getElementById('mini-cal-next').style.display=vista==='calendario'?'':'none'
+    document.getElementById('mini-cal-label').textContent=vista==='timeline'?'Línea de tiempo':''
+    document.getElementById('mini-cal-calendario').style.display=vista==='calendario'?'block':'none'
+    document.getElementById('mini-cal-timeline').style.display=vista==='timeline'?'block':'none'
+    if (vista==='timeline') renderMiniTimeline(); else renderMiniCal()
   }
 
   function renderMiniTimeline() {
-    const TIPO_COLOR = { 'Contrato': '#bf5af2', 'Entrega': 'var(--blue)', 'Publicar': 'var(--success)', 'Reporte': 'var(--warning)', 'Boleta': 'var(--warning)', 'Pago': 'var(--danger)' }
-    const sorted = [...miniCalEventos].sort((a,b) => a.fecha.localeCompare(b.fecha))
-    const hoy = new Date().toISOString().split('T')[0]
-    const container = document.getElementById('mini-cal-timeline')
-    container.innerHTML = sorted.map((e, i) => {
-      const isPast = e.fecha < hoy
-      const isToday = e.fecha === hoy
-      const color = TIPO_COLOR[e.label] || 'var(--muted)'
-      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;${i < sorted.length-1 ? 'border-bottom:1px solid var(--border)' : ''}">
-        <div style="width:28px;height:28px;border-radius:50%;background:${isPast ? color+'22' : color+'33'};border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:${color}">
-          ${isPast ? '✓' : isToday ? '●' : '○'}
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500;color:${isPast ? 'var(--muted)' : 'var(--text)'}">${e.label}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(e.fecha)}</div>
-        </div>
-        ${isToday ? '<span class="badge badge-accent" style="font-size:10px">Hoy</span>' : ''}
+    const TIPO_COLOR={'Contrato':'#bf5af2','Entrega':'var(--blue)','Publicar':'var(--success)','Reporte':'var(--warning)','Boleta':'var(--warning)','Pago':'var(--danger)'}
+    const sorted=[...miniCalEventos].sort((a,b)=>a.fecha.localeCompare(b.fecha))
+    const hoy=new Date().toISOString().split('T')[0]
+    document.getElementById('mini-cal-timeline').innerHTML=sorted.map((e,i)=>{
+      const isPast=e.fecha<hoy, isToday=e.fecha===hoy
+      const color=TIPO_COLOR[e.label]||'var(--muted)'
+      return `<div style="display:flex;gap:12px;align-items:center;padding:10px 0;${i<sorted.length-1?'border-bottom:1px solid var(--border)':''}">
+        <div style="width:28px;height:28px;border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:${color}">${isPast?'✓':isToday?'●':'○'}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600;color:${isPast?'var(--muted)':'var(--black)'}">${e.label}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(e.fecha)}</div></div>
+        ${isToday?'<span class="badge badge-accent">Hoy</span>':''}
       </div>`
     }).join('')
   }
 
+  function initMiniCal(c) {
+    miniCalEventos=[]
+    if (c.fecha_inicio) miniCalEventos.push({fecha:c.fecha_inicio,label:'Contrato',color:'#bf5af2'})
+    if (c.fecha_publicacion) {
+      const entrega=new Date(c.fecha_publicacion+'T12:00:00'); entrega.setDate(entrega.getDate()-8)
+      miniCalEventos.push({fecha:entrega.toISOString().split('T')[0],label:'Entrega',color:'var(--blue)'})
+      miniCalEventos.push({fecha:c.fecha_publicacion,label:'Publicar',color:'var(--success)'})
+      const reporte=new Date(c.fecha_publicacion+'T12:00:00'); reporte.setDate(reporte.getDate()+7)
+      miniCalEventos.push({fecha:reporte.toISOString().split('T')[0],label:'Reporte',color:'var(--warning)'})
+      if (c.forma_pago&&c.forma_pago.includes('30')) {
+        const pago=new Date(reporte); pago.setDate(pago.getDate()+30)
+        miniCalEventos.push({fecha:pago.toISOString().split('T')[0],label:'Pago',color:'var(--danger)'})
+      }
+    }
+    if (c.fecha_publicacion) { const d=new Date(c.fecha_publicacion+'T12:00:00'); miniCalYear=d.getFullYear(); miniCalMonth=d.getMonth() }
+    else { miniCalYear=new Date().getFullYear(); miniCalMonth=new Date().getMonth() }
+    renderMiniCal()
+  }
+
   function miniCalCambiarMes(delta) {
-    miniCalMonth += delta
-    if (miniCalMonth > 11) { miniCalMonth = 0; miniCalYear++ }
-    if (miniCalMonth < 0) { miniCalMonth = 11; miniCalYear-- }
+    miniCalMonth+=delta
+    if(miniCalMonth>11){miniCalMonth=0;miniCalYear++}
+    if(miniCalMonth<0){miniCalMonth=11;miniCalYear--}
     renderMiniCal()
   }
 
   function renderMiniCal() {
-    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    const labelEl = document.getElementById('mini-cal-label')
-    if (labelEl) labelEl.textContent = MESES[miniCalMonth] + ' ' + miniCalYear
-
-    const hoy = new Date()
-    const primerDia = new Date(miniCalYear, miniCalMonth, 1)
-    const ultimoDia = new Date(miniCalYear, miniCalMonth + 1, 0)
-    let startDow = primerDia.getDay()
-    if (startDow === 0) startDow = 7
-    startDow--
-
-    const grid = document.getElementById('mini-cal-days')
-    grid.innerHTML = ''
-    const totalCells = Math.ceil((startDow + ultimoDia.getDate()) / 7) * 7
-
-    for (let i = 0; i < totalCells; i++) {
-      const dayNum = i - startDow + 1
-      const fecha = new Date(miniCalYear, miniCalMonth, dayNum)
-      const isOther = dayNum < 1 || dayNum > ultimoDia.getDate()
-      const isHoy = !isOther && fecha.toDateString() === hoy.toDateString()
-      const fechaStr = fecha.toISOString().split('T')[0]
-      const evs = miniCalEventos.filter(e => e.fecha === fechaStr)
-
-      const cell = document.createElement('div')
-      cell.className = 'mini-cal-cell' + (isOther ? ' other-month' : '') + (isHoy ? ' today' : '')
-      let inner = `<div class="mini-cal-num">${fecha.getDate()}</div>`
-      evs.forEach(e => {
-        inner += `<div class="mini-cal-dot" style="background:${e.color}22;color:${e.color};border:0.5px solid ${e.color}" title="${e.label}">${e.label}</div>`
-      })
-      cell.innerHTML = inner
-      grid.appendChild(cell)
+    const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    const el=document.getElementById('mini-cal-label'); if(el) el.textContent=MESES[miniCalMonth]+' '+miniCalYear
+    const hoy=new Date()
+    const primerDia=new Date(miniCalYear,miniCalMonth,1)
+    const ultimoDia=new Date(miniCalYear,miniCalMonth+1,0)
+    let startDow=primerDia.getDay(); if(startDow===0)startDow=7; startDow--
+    const grid=document.getElementById('mini-cal-days'); if(!grid) return
+    grid.innerHTML=''
+    const totalCells=Math.ceil((startDow+ultimoDia.getDate())/7)*7
+    for(let i=0;i<totalCells;i++){
+      const dayNum=i-startDow+1
+      const fecha=new Date(miniCalYear,miniCalMonth,dayNum)
+      const isOther=dayNum<1||dayNum>ultimoDia.getDate()
+      const isHoy=!isOther&&fecha.toDateString()===hoy.toDateString()
+      const fechaStr=fecha.toISOString().split('T')[0]
+      const evs=miniCalEventos.filter(e=>e.fecha===fechaStr)
+      const cell=document.createElement('div')
+      cell.className='mini-cal-cell'+(isOther?' other-month':'')+(isHoy?' today':'')
+      let inner=`<div class="mini-cal-num">${fecha.getDate()}</div>`
+      evs.slice(0,2).forEach(e=>{inner+=`<div class="mini-cal-dot" style="background:${e.color}22;color:${e.color}">${e.label}</div>`})
+      cell.innerHTML=inner; grid.appendChild(cell)
     }
   }
 
-  function volverLista() {
-    document.getElementById('view-lista-campanas').style.display = 'block'
-    document.getElementById('view-detalle-campana').style.display = 'none'
-    loadCampanas()
-  }
-
-  async function crearCampana() {
-    const nombre = document.getElementById('nc-nombre').value.trim()
-    if (!nombre) return alert('El nombre es obligatorio')
-    const influencer = await getInfluencer()
-    const derechos = document.getElementById('nc-derechos').value.split(',').map(s => s.trim()).filter(Boolean)
-    const { error } = await db.from('campanas').insert({
-      nombre,
-      influencer_id: influencer?.id,
-      marca_id: document.getElementById('nc-marca').value || null,
-      agencia_id: document.getElementById('nc-agencia').value || null,
-      estado: document.getElementById('nc-estado').value,
-      monto: parseInt(document.getElementById('nc-monto').value) || null,
-      forma_pago: document.getElementById('nc-forma-pago').value,
-      fecha_publicacion: document.getElementById('nc-fecha-pub').value || null,
-      derechos,
-      notas: document.getElementById('nc-notas').value,
-    })
-    if (error) return alert('Error: ' + error.message)
-    closeModal('modal-campana')
-    loadDashboard()
-    if (document.getElementById('screen-campanas').classList.contains('active')) loadCampanas()
-  }
-
-  // ── COBROS ─────────────────────────────────────────────────
+  // ── COBROS ──────────────────────────────────────────────────
   async function loadCobros() {
-    const { data: facturas } = await db.from('facturas').select('*, campanas(nombre, agencias(nombre))').order('created_at', { ascending: false })
-    const hoy = new Date()
-    const en7dias = new Date(hoy); en7dias.setDate(en7dias.getDate() + 7)
+    const {data:facturas}=await db.from('facturas').select('*, campanas(nombre, agencias(nombre))').order('created_at',{ascending:false})
+    const hoy=new Date(); const en7=new Date(hoy); en7.setDate(en7.getDate()+7)
+    const pendiente=(facturas||[]).filter(f=>f.estado!=='pagada').reduce((s,f)=>s+(f.monto||0),0)
+    const vencePronto=(facturas||[]).filter(f=>f.estado!=='pagada'&&f.fecha_vencimiento&&new Date(f.fecha_vencimiento+'T12:00:00')<=en7).reduce((s,f)=>s+(f.monto||0),0)
+    const hace30=new Date(hoy); hace30.setDate(hace30.getDate()-30)
+    const cobrado=(facturas||[]).filter(f=>f.estado==='pagada'&&new Date(f.fecha_emision+'T12:00:00')>=hace30).reduce((s,f)=>s+(f.monto||0),0)
+    document.getElementById('cobro-pendiente').textContent=fmt(pendiente)
+    document.getElementById('cobro-vence').textContent=fmt(vencePronto)
+    document.getElementById('cobro-cobrado').textContent=fmt(cobrado)
 
-    const pendiente = (facturas || []).filter(f => f.estado !== 'pagada').reduce((s, f) => s + (f.monto || 0), 0)
-    const vencePronto = (facturas || []).filter(f => f.estado !== 'pagada' && f.fecha_vencimiento && new Date(f.fecha_vencimiento) <= en7dias).reduce((s, f) => s + (f.monto || 0), 0)
-    const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30)
-    const cobrado = (facturas || []).filter(f => f.estado === 'pagada' && new Date(f.fecha_emision) >= hace30).reduce((s, f) => s + (f.monto || 0), 0)
+    const container=document.getElementById('cobros-content')
+    if(!facturas||!facturas.length){container.innerHTML='<div class="empty"><div class="empty-icon">💳</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Registra tu primera factura</div></div>';return}
 
-    document.getElementById('cobro-pendiente').textContent = fmt(pendiente)
-    document.getElementById('cobro-vence').textContent = fmt(vencePronto)
-    document.getElementById('cobro-cobrado').textContent = fmt(cobrado)
-
-    const container = document.getElementById('cobros-content')
-    if (!facturas || !facturas.length) {
-      container.innerHTML = `<div class="empty"><div class="empty-icon">💳</div><div class="empty-title">Sin facturas registradas</div><div class="empty-sub">Registrá tu primera factura cuando termines una campaña</div></div>`
-      return
-    }
-
-    container.innerHTML = facturas.map(f => {
-      const vence = f.fecha_vencimiento ? new Date(f.fecha_vencimiento) : null
-      const emision = f.fecha_emision ? new Date(f.fecha_emision) : null
-      let progreso = 0
-      if (emision && vence) {
-        const total = vence - emision
-        const transcurrido = hoy - emision
-        progreso = Math.min(100, Math.max(0, Math.round((transcurrido / total) * 100)))
-      }
-      const urgent = vence && vence <= en7dias && f.estado !== 'pagada'
-      const colorProg = f.estado === 'pagada' ? 'var(--success)' : urgent ? 'var(--danger)' : 'var(--blue)'
-
-      const estadoBadge = {
-        por_emitir: ['badge-gray', 'Por emitir'],
-        emitida: ['badge-blue', 'Emitida'],
-        vencida: ['badge-red', 'Vencida'],
-        pagada: ['badge-green', 'Pagada'],
-      }[f.estado] || ['badge-gray', f.estado]
-
-      return `<div class="cobro-card ${urgent ? 'urgent' : ''}">
+    container.innerHTML=facturas.map(f=>{
+      const vence=f.fecha_vencimiento?new Date(f.fecha_vencimiento+'T12:00:00'):null
+      const emision=f.fecha_emision?new Date(f.fecha_emision+'T12:00:00'):null
+      let prog=0; if(emision&&vence){const total=vence-emision;prog=Math.min(100,Math.max(0,Math.round(((hoy-emision)/total)*100)))}
+      const urgent=vence&&vence<=en7&&f.estado!=='pagada'
+      const colorProg=f.estado==='pagada'?'var(--success)':urgent?'var(--danger)':'var(--blue)'
+      const estadoBadge={'por_emitir':'badge-gray','emitida':'badge-blue','vencida':'badge-red','pagada':'badge-green'}[f.estado]||'badge-gray'
+      const estadoLabel={'por_emitir':'Por emitir','emitida':'Emitida','vencida':'Vencida','pagada':'Pagada'}[f.estado]||f.estado
+      return `<div class="cobro-card ${urgent?'urgent':''}">
         <div class="cobro-header">
-          <div>
-            <div class="cobro-name">${f.campanas?.nombre || 'Campaña'}</div>
-            <div class="cobro-meta">${f.campanas?.agencias?.nombre || 'Directo'} · Emitida ${fmtDate(f.fecha_emision)}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="cobro-amount" style="color:${urgent ? 'var(--danger)' : 'var(--text)'}">${fmt(f.monto)}</div>
-            <span class="badge ${estadoBadge[0]}" style="margin-top:4px">${estadoBadge[1]}</span>
-          </div>
+          <div><div class="cobro-name">${f.campanas?.nombre||'Campaña'}</div><div class="cobro-meta">${f.campanas?.agencias?.nombre||'Directo'} · ${fmtDate(f.fecha_emision)}</div></div>
+          <div style="text-align:right"><div class="cobro-amount" style="color:${urgent?'var(--danger)':'var(--black)'}">${fmt(f.monto)}</div><span class="badge ${estadoBadge}" style="margin-top:4px">${estadoLabel}</span></div>
         </div>
-        ${emision && vence ? `
-        <div class="progress-bar"><div class="progress-fill" style="width:${progreso}%;background:${colorProg}"></div></div>
-        <div class="progress-labels"><span>${fmtDate(f.fecha_emision)}</span><span>Vence ${fmtDate(f.fecha_vencimiento)}</span></div>` : ''}
-        ${f.estado !== 'pagada' ? `<div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="marcarPagada('${f.id}')">✓ Marcar como pagada</button>
-        </div>` : ''}
+        ${emision&&vence?`<div class="progress-bar"><div class="progress-fill" style="width:${prog}%;background:${colorProg}"></div></div><div class="progress-labels"><span>${fmtDate(f.fecha_emision)}</span><span>Vence ${fmtDate(f.fecha_vencimiento)}</span></div>`:''}
+        ${f.estado!=='pagada'?`<div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="marcarPagada('${f.id}')">✓ Marcar pagada</button></div>`:''}
       </div>`
     }).join('')
   }
 
-  async function marcarPagada(id) {
-    await db.from('facturas').update({ estado: 'pagada' }).eq('id', id)
-    loadCobros()
-    loadDashboard()
+  async function marcarPagada(id){await db.from('facturas').update({estado:'pagada'}).eq('id',id);loadCobros();loadDashboard()}
+
+  async function crearFactura(){
+    const campana_id=document.getElementById('nf-campana').value
+    const monto=parseInt(document.getElementById('nf-monto').value)
+    if(!campana_id||!monto)return alert('Campaña y monto son obligatorios')
+    const influencer=await getInfluencer()
+    await db.from('facturas').insert({campana_id,influencer_id:influencer?.id,monto,fecha_emision:document.getElementById('nf-emision').value||null,fecha_vencimiento:document.getElementById('nf-vencimiento').value||null,estado:'emitida'})
+    closeModal('modal-factura');loadCobros();loadDashboard()
   }
 
-  async function crearFactura() {
-    const campana_id = document.getElementById('nf-campana').value
-    const monto = parseInt(document.getElementById('nf-monto').value)
-    if (!campana_id || !monto) return alert('Campaña y monto son obligatorios')
-    const influencer = await getInfluencer()
-    const { error } = await db.from('facturas').insert({
-      campana_id,
-      influencer_id: influencer?.id,
-      monto,
-      fecha_emision: document.getElementById('nf-emision').value || null,
-      fecha_vencimiento: document.getElementById('nf-vencimiento').value || null,
-      estado: 'emitida',
-    })
-    if (error) return alert('Error: ' + error.message)
-    closeModal('modal-factura')
-    loadCobros()
-    loadDashboard()
-  }
+  // ── REPORTES ────────────────────────────────────────────────
+  let todasCampanas=[]
 
-  // ── AGENCIAS ───────────────────────────────────────────────
-  async function loadAgencias() {
-    const { data } = await db.from('agencias').select('*, ejecutivos(*), campanas(*)')
-    document.getElementById('agencias-loading').style.display = 'none'
-    if (!data || !data.length) {
-      document.getElementById('agencias-empty').style.display = 'block'
-      return
-    }
-    document.getElementById('agencias-table').style.display = 'table'
-    document.getElementById('agencias-body').innerHTML = data.map(a => `
-      <tr>
-        <td><div class="brand-cell">${brandLogo(a.nombre)}<div class="brand-name">${a.nombre}</div></div></td>
-        <td class="brand-sub">${(a.ejecutivos || []).length} ejecutivos</td>
-        <td class="brand-sub">${(a.campanas || []).length} campañas</td>
-      </tr>`).join('')
-  }
-
-  async function crearAgencia() {
-    const nombre = document.getElementById('na-nombre').value.trim()
-    if (!nombre) return alert('El nombre es obligatorio')
-    const { error } = await db.from('agencias').insert({ nombre })
-    if (error) return alert('Error: ' + error.message)
-    closeModal('modal-agencia')
-    loadAgencias()
-  }
-
-  // ── SELECTS ────────────────────────────────────────────────
-  async function loadSelects() {
-    const [{ data: marcas }, { data: agencias }] = await Promise.all([
-      db.from('marcas').select('id, nombre').order('nombre'),
-      db.from('agencias').select('id, nombre').order('nombre'),
+  async function initReportes(){
+    const [{data:camps},{data:marcas},{data:agencias}]=await Promise.all([
+      db.from('campanas').select('id,nombre,marca_id,agencia_id,marcas(id,nombre),agencias(id,nombre)').order('nombre'),
+      db.from('marcas').select('id,nombre').order('nombre'),
+      db.from('agencias').select('id,nombre').order('nombre'),
     ])
-    document.getElementById('nc-marca').innerHTML = '<option value="">Sin marca</option>' +
-      (marcas || []).map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')
-    document.getElementById('nc-agencia').innerHTML = '<option value="">Directo</option>' +
-      (agencias || []).map(a => `<option value="${a.id}">${a.nombre}</option>`).join('')
-  }
-
-  async function loadCampanasSelect() {
-    const { data } = await db.from('campanas').select('id, nombre').order('nombre')
-    document.getElementById('nf-campana').innerHTML =
-      (data || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')
-    const hoy = new Date()
-    const en30 = new Date(hoy); en30.setDate(en30.getDate() + 30)
-    document.getElementById('nf-emision').value = hoy.toISOString().split('T')[0]
-    document.getElementById('nf-vencimiento').value = en30.toISOString().split('T')[0]
-  }
-
-  // ── UTILS ──────────────────────────────────────────────────
-  let _influencer = null
-  async function getInfluencer() {
-    if (_influencer) return _influencer
-    const { data } = await db.from('influencers').select('*').limit(1).single()
-    _influencer = data
-    return data
-  }
-
-
-
-  // ── REPORTES ───────────────────────────────────────────────
-  let todasCampanas = []
-
-  async function initReportes() {
-    const [{ data: camps }, { data: marcas }, { data: agencias }] = await Promise.all([
-      db.from('campanas').select('id, nombre, marca_id, agencia_id, marcas(id,nombre), agencias(id,nombre)').order('nombre'),
-      db.from('marcas').select('id, nombre').order('nombre'),
-      db.from('agencias').select('id, nombre').order('nombre'),
-    ])
-    todasCampanas = camps || []
-
-    const selMarca = document.getElementById('rep-marca-select')
-    selMarca.innerHTML = '<option value="">Todas las marcas</option>' +
-      (marcas || []).map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')
-
-    const selAgencia = document.getElementById('rep-agencia-select')
-    selAgencia.innerHTML = '<option value="">Todas las agencias</option>' +
-      (agencias || []).map(a => `<option value="${a.id}">${a.nombre}</option>`).join('')
-
+    todasCampanas=camps||[]
+    document.getElementById('rep-marca-select').innerHTML='<option value="">Todas las marcas</option>'+(marcas||[]).map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('')
+    document.getElementById('rep-agencia-select').innerHTML='<option value="">Todas las agencias</option>'+(agencias||[]).map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')
     poblarCampanas()
-    if (todasCampanas.length) loadReportes()
   }
 
-  function poblarCampanas() {
-    const marcaId = document.getElementById('rep-marca-select').value
-    const agenciaId = document.getElementById('rep-agencia-select').value
-    const filtradas = todasCampanas.filter(c => {
-      if (marcaId && c.marca_id !== marcaId) return false
-      if (agenciaId && c.agencia_id !== agenciaId) return false
+  function poblarCampanas(){
+    const marcaId=document.getElementById('rep-marca-select').value
+    const agenciaId=document.getElementById('rep-agencia-select').value
+    const filtradas=todasCampanas.filter(c=>{
+      if(marcaId&&c.marca_id!==marcaId)return false
+      if(agenciaId&&c.agencia_id!==agenciaId)return false
       return true
     })
-    const sel = document.getElementById('rep-campana-select')
-    sel.innerHTML = '<option value="">Selecciona una campaña</option>' +
-      filtradas.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')
+    document.getElementById('rep-campana-select').innerHTML='<option value="">Selecciona campaña</option>'+filtradas.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')
     return filtradas
   }
 
-  function filtrarReportes() {
-    const filtradas = poblarCampanas()
-    if (filtradas.length === 1) {
-      document.getElementById('rep-campana-select').value = filtradas[0].id
-      loadReportes()
-    } else {
-      document.getElementById('rep-content').innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Selecciona una campaña</div><div class="empty-sub">Filtra por marca o agencia y elige una campaña</div></div>'
-    }
+  function filtrarReportes(){
+    const filtradas=poblarCampanas()
+    if(filtradas.length===1){document.getElementById('rep-campana-select').value=filtradas[0].id;loadReportes()}
+    else document.getElementById('rep-content').innerHTML='<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Selecciona una campaña</div><div class="empty-sub">Filtra y elige una campaña para ver sus métricas</div></div>'
   }
 
-  async function loadReportes() {
-    const campanaId = document.getElementById('rep-campana-select').value
-    if (!campanaId) return
-    const container = document.getElementById('rep-content')
-    container.innerHTML = '<div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div>'
-
-    const { data: pubs } = await db.from('publicaciones').select('*, reportes(*)').eq('campana_id', campanaId).eq('estado', 'publicada')
-    const { data: camp } = await db.from('campanas').select('*, marcas(*), agencias(*)').eq('id', campanaId).single()
-
-    if (!pubs || !pubs.length) {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Sin publicaciones registradas</div><div class="empty-sub">Las métricas aparecerán cuando se registren publicaciones</div></div>'
-      return
-    }
-
-    const fmtN = n => n ? Number(n).toLocaleString('es-CL') : '—'
-    const totalAlcance = pubs.reduce((s,p) => s + ((p.reportes?.[0]?.alcance) || 0), 0)
-    const totalVistas = pubs.reduce((s,p) => s + ((p.reportes?.[0]?.vistas) || 0), 0)
-    const totalClics = pubs.reduce((s,p) => s + ((p.reportes?.[0]?.clics) || 0), 0)
-    const totalGuardados = pubs.reduce((s,p) => s + ((p.reportes?.[0]?.guardados) || 0), 0)
-    const avgEng = pubs.filter(p => p.reportes?.[0]?.engagement_rate).reduce((s,p,_,a) => s + p.reportes[0].engagement_rate/a.length, 0)
-
-    const TIPO_COLOR = { Story: '#bf5af222|#bf5af2', Reel: 'var(--blue-dim)|var(--blue)', TikTok: 'var(--success-dim)|var(--success)' }
-
-    container.innerHTML = `
+  async function loadReportes(){
+    const campanaId=document.getElementById('rep-campana-select').value
+    if(!campanaId)return
+    const container=document.getElementById('rep-content')
+    container.innerHTML='<div class="loading"><div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div>'
+    const [{data:pubs},{data:camp}]=await Promise.all([
+      db.from('publicaciones').select('*, reportes(*)').eq('campana_id',campanaId).eq('estado','publicada'),
+      db.from('campanas').select('*, marcas(*), agencias(*)').eq('id',campanaId).single()
+    ])
+    if(!pubs||!pubs.length){container.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">Sin publicaciones</div><div class="empty-sub">Las métricas aparecerán cuando se registren publicaciones</div></div>';return}
+    const fmtN=n=>n?Number(n).toLocaleString('es-CL'):'—'
+    const totalAlcance=pubs.reduce((s,p)=>s+((p.reportes?.[0]?.alcance)||0),0)
+    const totalVistas=pubs.reduce((s,p)=>s+((p.reportes?.[0]?.vistas)||0),0)
+    const avgEng=pubs.filter(p=>p.reportes?.[0]?.engagement_rate).reduce((s,p,_,a)=>s+p.reportes[0].engagement_rate/a.length,0)
+    container.innerHTML=`
       <div class="export-bar">
-        <button class="btn btn-ghost" onclick="exportarExcel('${campanaId}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Exportar Excel
-        </button>
-        <button class="btn btn-primary" onclick="generarReporte('${campanaId}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Generar Reporte PDF
-        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarExcel('${campanaId}')">↓ Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="generarReporte('${campanaId}')">↓ Reporte PDF</button>
       </div>
+      <div class="resumen-nums">
+        <div class="resumen-num"><div class="metric-label">Alcance total</div><div class="metric-val">${fmtN(totalAlcance)}</div></div>
+        <div class="resumen-num"><div class="metric-label">Impresiones</div><div class="metric-val">${fmtN(totalVistas)}</div></div>
+        <div class="resumen-num"><div class="metric-label">Engagement</div><div class="metric-val">${avgEng.toFixed(2)}%</div></div>
+        <div class="resumen-num"><div class="metric-label">Publicaciones</div><div class="metric-val">${pubs.length}</div></div>
+      </div>
+      <div class="section-header"><div class="section-title">Por publicación</div></div>
+      <div class="pub-grid">${pubs.map((p,i)=>{
+        const r=p.reportes?.[0]||{}
+        const esReel=p.tipo==='Reel'
+        return `<div class="pub-card">
+          <div class="pub-card-header">
+            <div><div class="pub-name">${p.tipo} ${i+1}</div><div class="pub-date">${fmtDate(p.fecha_publicada)}</div></div>
+            <span class="badge badge-green">✓</span>
+          </div>
+          <div class="metric-item"><div class="metric-label">Alcance</div><div class="metric-val">${fmtN(r.alcance)}</div></div>
+          <div class="metric-item"><div class="metric-label">Impresiones</div><div class="metric-val">${fmtN(r.vistas)}</div></div>
+          <div class="metric-item"><div class="metric-label">Engagement</div><div class="metric-val">${r.engagement_rate?r.engagement_rate+'%':'—'}</div></div>
+          ${esReel?`<div class="metric-item"><div class="metric-label">Guardados</div><div class="metric-val">${fmtN(r.guardados)}</div></div>`:''}
+        </div>`
+      }).join('')}</div>`
+  }
 
-      <div class="resumen-card">
-        <div class="section-title" style="margin-bottom:12px">Resumen de campaña · ${camp?.nombre || ''}</div>
-        <div class="resumen-grid">
-          <div class="res-item"><div class="res-val">${fmtN(totalAlcance)}</div><div class="res-label">Alcance total</div></div>
-          <div class="res-item"><div class="res-val">${fmtN(totalVistas)}</div><div class="res-label">Impresiones totales</div></div>
-          <div class="res-item"><div class="res-val">${avgEng.toFixed(2)}%</div><div class="res-label">Eng. rate promedio</div></div>
-          <div class="res-item"><div class="res-val">${pubs.length}</div><div class="res-label">Publicaciones</div></div>
+  function exportarExcel(id){alert('Excel — próximamente conectado a generación automática')}
+  function generarReporte(id){alert('PDF — próximamente conectado a Claude API')}
+
+  // ── AGENCIAS ────────────────────────────────────────────────
+  async function loadAgencias(){
+    const {data}=await db.from('agencias').select('*, ejecutivos(*), campanas(*)')
+    document.getElementById('agencias-loading').style.display='none'
+    if(!data||!data.length){document.getElementById('agencias-empty').style.display='block';return}
+    const {data:facturas}=await db.from('facturas').select('*, campanas(agencia_id)')
+    document.getElementById('agencias-list').innerHTML=data.map(a=>{
+      const campCount=(a.campanas||[]).length
+      const factAgencia=(facturas||[]).filter(f=>f.campanas?.agencia_id===a.id)
+      const totalFact=factAgencia.reduce((s,f)=>s+(f.monto||0),0)
+      const ticketProm=campCount>0?Math.round(totalFact/campCount):0
+      const pagadas=factAgencia.filter(f=>f.estado==='pagada')
+      return `<div class="agencia-card">
+        <div class="agencia-name">${a.nombre}</div>
+        <div class="agencia-meta">${(a.ejecutivos||[]).length} ejecutivo${(a.ejecutivos||[]).length!==1?'s':''}</div>
+        <div class="agencia-stats">
+          <div class="ag-stat"><div class="ag-stat-val">${campCount}</div><div class="ag-stat-label">Campañas</div></div>
+          <div class="ag-stat"><div class="ag-stat-val">${fmt(ticketProm)}</div><div class="ag-stat-label">Ticket prom.</div></div>
+          <div class="ag-stat"><div class="ag-stat-val">${pagadas.length}</div><div class="ag-stat-label">Pagadas</div></div>
         </div>
-      </div>
-
-      <div class="section-header"><div class="section-title">Publicaciones</div></div>
-      <div class="pub-grid">
-        ${pubs.map((p, i) => {
-          const r = p.reportes?.[0] || {}
-          const [bg, fg] = (TIPO_COLOR[p.tipo] || 'var(--surface2)|var(--muted)').split('|')
-          const esReel = p.tipo === 'Reel'
-          return `<div class="pub-card">
-            <div class="pub-card-header">
-              <div class="pub-type">
-                <div class="pub-icon" style="background:${bg};color:${fg}">${p.tipo === 'Story' ? '📖' : p.tipo === 'Reel' ? '🎬' : '🎵'}</div>
-                <div>
-                  <div class="pub-name">${p.tipo} ${i+1} · ${p.plataforma}</div>
-                  <div class="pub-date">${fmtDate(p.fecha_publicada)}</div>
-                </div>
-              </div>
-              <span class="badge badge-green">Publicada</span>
-            </div>
-            <div class="metrics-grid">
-              <div class="metric-item"><div class="metric-label">Alcance</div><div class="metric-val-sm">${fmtN(r.alcance)}</div></div>
-              <div class="metric-item"><div class="metric-label">Impresiones</div><div class="metric-val-sm">${fmtN(r.vistas)}</div></div>
-              <div class="metric-item"><div class="metric-label">Engagement</div><div class="metric-val-sm">${r.engagement_rate ? r.engagement_rate + '%' : '—'}</div></div>
-              ${esReel ? `<div class="metric-item"><div class="metric-label">Guardados</div><div class="metric-val-sm">${fmtN(r.guardados)}</div></div>` : `<div class="metric-item"><div class="metric-label">Interacciones</div><div class="metric-val-sm">${fmtN(r.clics)}</div></div>`}
-            </div>
-            ${esReel ? `<div class="metrics-grid" style="margin-top:8px">
-              <div class="metric-item"><div class="metric-label">Clics</div><div class="metric-val-sm">${fmtN(r.clics)}</div></div>
-              <div class="metric-item"><div class="metric-label">Compartidos</div><div class="metric-val-sm">${fmtN(r.compartidos)}</div></div>
-            </div>` : ''}
-          </div>`
-        }).join('')}
-      </div>
-    `
+      </div>`
+    }).join('')
   }
 
-  function exportarExcel(campanaId) {
-    alert('Exportando Excel... (módulo en construcción — se conectará a la API de generación)')
+  async function crearAgencia(){
+    const nombre=document.getElementById('na-nombre').value.trim()
+    if(!nombre)return alert('El nombre es obligatorio')
+    await db.from('agencias').insert({nombre})
+    closeModal('modal-agencia');loadAgencias()
   }
 
-  function generarReporte(campanaId) {
-    alert('Generando reporte PDF... (módulo en construcción — se conectará a Claude API + Reportlab)')
+  // ── CALENDARIO ──────────────────────────────────────────────
+  let calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calCampanas=[]
+
+  function setVistaCalendario(v){
+    document.getElementById('btn-vista-mes').className=v==='mes'?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'
+    document.getElementById('btn-vista-tl').className=v==='timeline'?'btn btn-primary btn-sm':'btn btn-ghost btn-sm'
+    document.getElementById('cal-vista-mes').style.display=v==='mes'?'block':'none'
+    document.getElementById('cal-vista-timeline').style.display=v==='timeline'?'block':'none'
+    if(v==='timeline')renderTlCampanas();else renderCalMes()
   }
 
-
-  // ── CALENDARIO ─────────────────────────────────────────────
-  let calYear = new Date().getFullYear()
-  let calMonth = new Date().getMonth()
-  let calCampanas = []
-  let calVista = 'mes'
-
-  function setVistaCalendario(v) {
-    calVista = v
-    document.getElementById('btn-vista-mes').classList.toggle('active', v === 'mes')
-    document.getElementById('btn-vista-tl').classList.toggle('active', v === 'timeline')
-    document.getElementById('cal-vista-mes').style.display = v === 'mes' ? 'block' : 'none'
-    document.getElementById('cal-vista-timeline').style.display = v === 'timeline' ? 'block' : 'none'
-    if (v === 'timeline') renderTimeline()
-    else renderCalMes()
-  }
-
-  function cambiarMes(delta) {
-    calMonth += delta
-    if (calMonth > 11) { calMonth = 0; calYear++ }
-    if (calMonth < 0) { calMonth = 11; calYear-- }
+  function cambiarMes(delta){
+    calMonth+=delta
+    if(calMonth>11){calMonth=0;calYear++}
+    if(calMonth<0){calMonth=11;calYear--}
     renderCalMes()
   }
 
-  function getEventosCampana(c) {
-    const evs = []
-    if (c.fecha_inicio) evs.push({ fecha: c.fecha_inicio, label: 'Contrato · ' + c.nombre, tipo: 'purple' })
-    if (c.fecha_publicacion) evs.push({ fecha: c.fecha_publicacion, label: 'Publicar · ' + c.nombre, tipo: 'green' })
-    if (c.notas && c.notas.includes('Entrega contenido:')) {
-      const m = c.notas.match(/Entrega contenido: (\d+ \w+ \d+)/)
-      if (!m) {
-        const pub = new Date(c.fecha_publicacion + 'T12:00:00')
-        pub.setDate(pub.getDate() - 8)
-        evs.push({ fecha: pub.toISOString().split('T')[0], label: 'Entrega · ' + c.nombre, tipo: 'blue' })
-      }
-    } else if (c.fecha_publicacion) {
-      const pub = new Date(c.fecha_publicacion + 'T12:00:00')
-      pub.setDate(pub.getDate() - 8)
-      evs.push({ fecha: pub.toISOString().split('T')[0], label: 'Entrega · ' + c.nombre, tipo: 'blue' })
-    }
-    if (c.fecha_publicacion) {
-      const rep = new Date(c.fecha_publicacion + 'T12:00:00')
-      rep.setDate(rep.getDate() + 7)
-      evs.push({ fecha: rep.toISOString().split('T')[0], label: 'Reporte · ' + c.nombre, tipo: 'amber' })
-      const bol = new Date(rep)
-      evs.push({ fecha: bol.toISOString().split('T')[0], label: 'Boleta · ' + c.nombre, tipo: 'amber' })
-      if (c.forma_pago && c.forma_pago.includes('30')) {
-        const pago = new Date(rep)
-        pago.setDate(pago.getDate() + 30)
-        evs.push({ fecha: pago.toISOString().split('T')[0], label: 'Pago · ' + c.nombre, tipo: 'red' })
-      }
+  function getEventosCampana(c){
+    const evs=[]
+    if(c.fecha_inicio)evs.push({fecha:c.fecha_inicio,label:'Contrato',color:'#bf5af2'})
+    if(c.fecha_publicacion){
+      const e=new Date(c.fecha_publicacion+'T12:00:00');e.setDate(e.getDate()-8)
+      evs.push({fecha:e.toISOString().split('T')[0],label:'Entrega',color:'var(--blue)'})
+      evs.push({fecha:c.fecha_publicacion,label:'Publicar',color:'var(--success)'})
+      const r=new Date(c.fecha_publicacion+'T12:00:00');r.setDate(r.getDate()+7)
+      evs.push({fecha:r.toISOString().split('T')[0],label:'Reporte',color:'var(--warning)'})
+      if(c.forma_pago&&c.forma_pago.includes('30')){const p=new Date(r);p.setDate(p.getDate()+30);evs.push({fecha:p.toISOString().split('T')[0],label:'Pago',color:'var(--danger)'})}
     }
     return evs
   }
 
-  function renderCalMes() {
-    const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-    document.getElementById('cal-mes-label').textContent = MESES[calMonth] + ' ' + calYear
-    const hoy = new Date()
-    const primerDia = new Date(calYear, calMonth, 1)
-    const ultimoDia = new Date(calYear, calMonth + 1, 0)
-    let startDow = primerDia.getDay()
-    if (startDow === 0) startDow = 7
-    startDow--
-
-    const todos = []
-    calCampanas.forEach(c => todos.push(...getEventosCampana(c)))
-
-    const grid = document.getElementById('cal-grid-days')
-    grid.innerHTML = ''
-
-    const totalCells = Math.ceil((startDow + ultimoDia.getDate()) / 7) * 7
-    for (let i = 0; i < totalCells; i++) {
-      const dayNum = i - startDow + 1
-      const fecha = new Date(calYear, calMonth, dayNum)
-      const isOther = dayNum < 1 || dayNum > ultimoDia.getDate()
-      const isHoy = !isOther && fecha.toDateString() === hoy.toDateString()
-      const fechaStr = fecha.toISOString().split('T')[0]
-      const evs = todos.filter(e => e.fecha === fechaStr)
-
-      const cell = document.createElement('div')
-      cell.className = 'cal-cell' + (isOther ? ' other-month' : '') + (isHoy ? ' today' : '')
-      let html = `<div class="cal-num">${fecha.getDate()}</div>`
-      evs.slice(0, 3).forEach(e => {
-        html += `<div class="cal-ev cal-ev-${e.tipo === 'amber' ? 'amber' : e.tipo === 'purple' ? 'purple' : e.tipo === 'red' ? 'red' : e.tipo === 'green' ? 'green' : 'blue'}">${e.label}</div>`
-      })
-      if (evs.length > 3) html += `<div style="font-size:9px;color:var(--muted)">+${evs.length - 3} más</div>`
-      cell.innerHTML = html
-      grid.appendChild(cell)
+  function renderCalMes(){
+    const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    document.getElementById('cal-mes-label').textContent=MESES[calMonth]+' '+calYear
+    const hoy=new Date()
+    const primerDia=new Date(calYear,calMonth,1)
+    const ultimoDia=new Date(calYear,calMonth+1,0)
+    let startDow=primerDia.getDay();if(startDow===0)startDow=7;startDow--
+    const todos=[];calCampanas.forEach(c=>todos.push(...getEventosCampana(c)))
+    const grid=document.getElementById('cal-grid-days');grid.innerHTML=''
+    const total=Math.ceil((startDow+ultimoDia.getDate())/7)*7
+    for(let i=0;i<total;i++){
+      const dayNum=i-startDow+1
+      const fecha=new Date(calYear,calMonth,dayNum)
+      const isOther=dayNum<1||dayNum>ultimoDia.getDate()
+      const isHoy=!isOther&&fecha.toDateString()===hoy.toDateString()
+      const fechaStr=fecha.toISOString().split('T')[0]
+      const evs=todos.filter(e=>e.fecha===fechaStr)
+      const cell=document.createElement('div')
+      cell.className='mini-cal-cell'+(isOther?' other-month':'')+(isHoy?' today':'')
+      let inner=`<div class="mini-cal-num">${fecha.getDate()}</div>`
+      evs.slice(0,2).forEach(e=>{inner+=`<div class="mini-cal-dot" style="background:${e.color}22;color:${e.color}">${e.label}</div>`})
+      cell.innerHTML=inner;grid.appendChild(cell)
     }
   }
 
-  function renderTimeline() {
-    const container = document.getElementById('tl-campanas-content')
-    if (!calCampanas.length) {
-      container.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Sin campañas activas</div><div class="empty-sub">Creá una campaña para ver su timeline</div></div>'
-      return
-    }
-    container.innerHTML = calCampanas.map(c => {
-      const { bg, fg } = colorForLetter((c.marcas?.nombre || c.nombre)[0])
-      const evs = getEventosCampana(c)
-      const TIPO_COLOR = { purple: '#bf5af2', blue: 'var(--blue)', green: 'var(--success)', amber: 'var(--warning)', red: 'var(--danger)' }
-      const evHtml = evs.sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e =>
-        `<div class="tl-ev-row">
-          <span class="tl-ev-date">${fmtDate(e.fecha)}</span>
-          <div class="tl-ev-dot" style="background:${TIPO_COLOR[e.tipo] || 'var(--muted)'}"></div>
-          <span class="tl-ev-label">${e.label.split(' · ')[0]}</span>
-        </div>`
-      ).join('')
-      return `<div>
-        <div class="tl-camp-header" onclick="verDetalle('${c.id}');showScreen('campanas',document.querySelectorAll('.nav-item')[1])">
-          <div class="tl-camp-logo" style="background:${bg};color:${fg}">${(c.marcas?.nombre || c.nombre)[0].toUpperCase()}</div>
-          <div>
-            <div class="tl-camp-name">${c.nombre}</div>
-            <div class="tl-camp-sub">${c.agencias?.nombre || 'Directo'} · ${fmt(c.monto)}</div>
-          </div>
+  function renderTlCampanas(){
+    const container=document.getElementById('tl-campanas-content')
+    if(!calCampanas.length){container.innerHTML='<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">Sin campañas activas</div></div>';return}
+    const TIPO_COLOR={'Contrato':'#bf5af2','Entrega':'var(--blue)','Publicar':'var(--success)','Reporte':'var(--warning)','Pago':'var(--danger)'}
+    container.innerHTML=calCampanas.map(c=>{
+      const color=colorForLetter((c.marcas?.nombre||c.nombre)[0])
+      const evs=getEventosCampana(c).sort((a,b)=>a.fecha.localeCompare(b.fecha))
+      return `<div style="margin-bottom:16px">
+        <div class="camp-card" style="margin-bottom:8px" onclick="verDetallePatched('${c.id}');showScreen('campanas',null,'desk')">
+          ${campLogo(c.marcas?.nombre||c.nombre,32)}
+          <div class="camp-info"><div class="camp-name">${c.nombre}</div><div class="camp-meta">${c.agencias?.nombre||'Directo'}</div></div>
           ${badgeHtml(c.estado)}
         </div>
-        <div class="tl-events">${evHtml}</div>
+        ${evs.map((e,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:7px 0;${i<evs.length-1?'border-bottom:1px solid var(--border)':''}">
+          <div style="width:8px;height:8px;border-radius:50%;background:${TIPO_COLOR[e.label]||'var(--muted)'};flex-shrink:0"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--black);flex:1">${e.label}</div>
+          <div style="font-size:11px;color:var(--muted)">${fmtDate(e.fecha)}</div>
+        </div>`).join('')}
       </div>`
     }).join('')
   }
 
-  async function loadCalendario() {
-    const { data } = await db.from('campanas').select('*, marcas(*), agencias(*)').not('estado', 'eq', 'cerrada')
-    calCampanas = data || []
+  async function loadCalendario(){
+    const{data}=await db.from('campanas').select('*, marcas(*), agencias(*)').not('estado','eq','cerrada')
+    calCampanas=data||[]
     renderCalMes()
   }
 
-  // ── INIT ───────────────────────────────────────────────────
+  // ── SELECTS ─────────────────────────────────────────────────
+  async function loadSelects(){
+    const [{data:marcas},{data:agencias}]=await Promise.all([db.from('marcas').select('id,nombre').order('nombre'),db.from('agencias').select('id,nombre').order('nombre')])
+    document.getElementById('nc-marca').innerHTML='<option value="">Sin marca</option>'+(marcas||[]).map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('')
+    document.getElementById('nc-agencia').innerHTML='<option value="">Directo</option>'+(agencias||[]).map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('')
+  }
+
+  async function loadCampanasSelect(){
+    const{data}=await db.from('campanas').select('id,nombre').order('nombre')
+    document.getElementById('nf-campana').innerHTML=(data||[]).map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')
+    const hoy=new Date();const en30=new Date(hoy);en30.setDate(en30.getDate()+30)
+    document.getElementById('nf-emision').value=hoy.toISOString().split('T')[0]
+    document.getElementById('nf-vencimiento').value=en30.toISOString().split('T')[0]
+  }
+
+  async function crearCampana(){
+    const nombre=document.getElementById('nc-nombre').value.trim()
+    if(!nombre)return alert('El nombre es obligatorio')
+    const influencer=await getInfluencer()
+    const derechos=document.getElementById('nc-derechos').value.split(',').map(s=>s.trim()).filter(Boolean)
+    await db.from('campanas').insert({nombre,influencer_id:influencer?.id,marca_id:document.getElementById('nc-marca').value||null,agencia_id:document.getElementById('nc-agencia').value||null,estado:document.getElementById('nc-estado').value,monto:parseInt(document.getElementById('nc-monto').value)||null,forma_pago:document.getElementById('nc-forma-pago').value,fecha_publicacion:document.getElementById('nc-fecha-pub').value||null,derechos,notas:document.getElementById('nc-notas').value})
+    closeModal('modal-campana');loadDashboard()
+    if(document.getElementById('screen-campanas').classList.contains('active'))loadCampanas()
+  }
+
+  // ── UTILS ───────────────────────────────────────────────────
+  let _influencer=null
+  async function getInfluencer(){
+    if(_influencer)return _influencer
+    const{data}=await db.from('influencers').select('*').limit(1).single()
+    _influencer=data;return data
+  }
+
+  // ── INIT ────────────────────────────────────────────────────
   loadDashboard()
 </script>
 </body>
