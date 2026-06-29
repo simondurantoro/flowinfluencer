@@ -437,13 +437,11 @@
         </div>
       </div>
 
-      <!-- Gráfico flujo semanal -->
-      <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-        <div class="section-header" style="margin-bottom:16px">
-          <div class="section-title">Flujo de caja semanal</div>
-          <div style="font-size:11px;color:var(--muted)">3 semanas atrás · hoy · 3 semanas adelante</div>
+      <!-- Resumen ejecutivo texto -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px">
+        <div id="resumen-ejecutivo" style="font-size:15px;color:var(--text);line-height:1.7">
+          <span style="color:var(--muted);font-size:13px">Cargando resumen...</span>
         </div>
-        <canvas id="chart-semanal" height="140"></canvas>
       </div>
 
       <!-- Gráfico por marca -->
@@ -451,7 +449,7 @@
         <div class="table-wrap" style="padding:20px">
           <div class="section-header" style="margin-bottom:12px">
             <div class="section-title">Ingresos por marca</div>
-            <select style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted)" id="chart-marca-grupo" onchange="renderChartMarca();renderChartSemanal()">
+            <select style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted)" id="chart-marca-grupo" onchange="renderChartMarca()">
               <option value="marca">Por marca</option>
               <option value="agencia">Por agencia</option>
             </select>
@@ -460,7 +458,7 @@
         </div>
         <div class="table-wrap" style="padding:20px">
           <div class="section-header" style="margin-bottom:12px">
-            <div class="section-title">Pagado vs por cobrar</div>
+            <div class="section-title">Pagado y por cobrar</div>
             <select style="font-size:11px;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--muted)" id="chart-cobro-periodo" onchange="renderChartCobro()">
               <option value="mes">Por mes</option>
               <option value="semana">Por semana</option>
@@ -933,10 +931,39 @@
     document.getElementById('dash-activas-count').textContent = activas.length + ' activas'
     renderDashTable(activas.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8), facturas || [])
 
+    // Resumen ejecutivo
+    renderResumenEjecutivo(campanas, facturas)
     // Gráficos
-    renderChartSemanal()
     renderChartMarca()
     renderChartCobro()
+  }
+
+  function renderResumenEjecutivo(campanas, facturas) {
+    const hoy = new Date()
+    const año = hoy.getFullYear()
+    const campañasAño = (campanas || []).filter(c => new Date(c.created_at).getFullYear() === año)
+    const marcasUnicas = new Set(campañasAño.map(c => c.marcas?.nombre).filter(Boolean))
+    const agenciasUnicas = new Set(campañasAño.map(c => c.agencias?.nombre).filter(Boolean))
+    const totalAño = (facturas || [])
+      .filter(f => new Date(f.fecha_emision + 'T12:00:00').getFullYear() === año)
+      .reduce((s, f) => s + (f.monto || 0), 0)
+    const pendiente = (facturas || [])
+      .filter(f => f.estado === 'emitida')
+      .reduce((s, f) => s + (f.monto || 0), 0)
+
+    const el = document.getElementById('resumen-ejecutivo')
+    if (!el) return
+
+    const accent = (txt) => `<span style="color:var(--accent);font-weight:600">${txt}</span>`
+    const warn = (txt) => `<span style="color:var(--warning);font-weight:600">${txt}</span>`
+
+    el.innerHTML = `
+      Ya llevamos <span style="font-weight:600">${campañasAño.length} campaña${campañasAño.length !== 1 ? 's' : ''}</span>
+      con ${accent(marcasUnicas.size + ' marca' + (marcasUnicas.size !== 1 ? 's' : ''))}
+      y ${accent(agenciasUnicas.size + ' agencia' + (agenciasUnicas.size !== 1 ? 's' : ''))} en ${año}.
+      Has generado ${accent(fmt(totalAño))} este año.
+      ${pendiente > 0 ? `Tienes ${warn(fmt(pendiente))} pendiente de cobro.` : '<span style="color:var(--success);font-weight:600">Todo al día con los cobros.</span>'}
+    `
   }
 
   function renderChartSemanal() {
