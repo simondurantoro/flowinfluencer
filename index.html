@@ -1701,6 +1701,13 @@
     if (!confirm('¿Cerrar sesión?')) return
     await db.auth.signOut()
   }
+  window.onLogin = function(user) {
+    currentUser = user
+    document.getElementById('login-screen').style.display = 'none'
+    const initials = (user.user_metadata?.nombre || user.email || 'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+    document.getElementById('user-avatar').textContent = initials
+    loadDashboard()
+  }
 
   // ── INIT ────────────────────────────────────────────────────
   loadDashboard()
