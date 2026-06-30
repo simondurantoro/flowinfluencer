@@ -435,6 +435,85 @@
     .fw-bold { font-weight: 700; }
     .mt-8 { margin-top: 8px; }
     .mt-16 { margin-top: 16px; }
+
+    /* ── LOGIN ── */
+    .login-screen {
+      position: fixed; inset: 0; background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 24px;
+    }
+    .login-box { width: 100%; max-width: 360px; }
+    .login-logo {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px; font-weight: 900; letter-spacing: 2px;
+      color: var(--black); text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .login-logo span { color: var(--accent); }
+    .login-tagline { font-size: 13px; color: var(--muted); margin-bottom: 36px; }
+    .login-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px; font-weight: 800; color: var(--black);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .login-error {
+      background: #fff0f0; border: 1px solid #ffcccc;
+      border-radius: 4px; padding: 10px 14px;
+      font-size: 13px; color: var(--danger);
+      margin-bottom: 16px; display: none;
+    }
+    .login-success {
+      background: #f0fff4; border: 1px solid #b3f0c8;
+      border-radius: 4px; padding: 10px 14px;
+      font-size: 13px; color: var(--success);
+      margin-bottom: 16px; display: none;
+    }
+    .login-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; color: var(--muted); font-size: 12px;
+    }
+    .login-divider::before, .login-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .login-switch {
+      text-align: center; font-size: 13px; color: var(--muted);
+      margin-top: 20px;
+    }
+    .login-switch button {
+      background: none; border: none; color: var(--black);
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      font-size: 13px; text-decoration: underline;
+    }
+    .login-input-group { margin-bottom: 12px; }
+    .login-input-group label {
+      display: block; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .login-input {
+      width: 100%; padding: 12px 14px;
+      background: var(--off); border: 1.5px solid var(--border);
+      border-radius: 4px; color: var(--text);
+      font-size: 14px; font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .login-input:focus { outline: none; border-color: var(--black); background: var(--white); }
+    .login-btn {
+      width: 100%; padding: 13px;
+      background: var(--black); color: var(--white);
+      border: none; border-radius: 4px; cursor: pointer;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px; font-weight: 800;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      margin-top: 8px; transition: opacity 0.15s;
+    }
+    .login-btn:hover { opacity: 0.85; }
+    .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-footer {
+      margin-top: 40px; font-size: 11px; color: var(--muted);
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -453,7 +532,7 @@
       <button class="desk-nav-btn" onclick="showScreen('agente',this,'desk')">Flor</button>
     </nav>
     <div class="topbar-right">
-      <div class="avatar" id="user-avatar">SD</div>
+      <div class="avatar" id="user-avatar" onclick="doLogout()" style="cursor:pointer" title="Cerrar sesión">SD</div>
     </div>
   </header>
 
@@ -1588,5 +1667,57 @@
   // ── INIT ────────────────────────────────────────────────────
   loadDashboard()
 </script>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Flow<span>·</span>F</div>
+    <div class="login-tagline">Gestión inteligente de campañas</div>
+
+    <div id="login-error" class="login-error"></div>
+    <div id="login-success" class="login-success"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="form-login">
+      <div class="login-title">Entrar</div>
+      <div class="login-input-group">
+        <label>Email</label>
+        <input class="login-input" id="login-email" type="email" placeholder="tu@email.com" autocomplete="email"/>
+      </div>
+      <div class="login-input-group">
+        <label>Contraseña</label>
+        <input class="login-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
+      <div class="login-switch">
+        ¿Sin cuenta? <button onclick="switchForm('register')">Crear cuenta</button>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="form-register" style="display:none">
+      <div class="login-title">Crear cuenta</div>
+      <div class="login-input-group">
+        <label>Nombre</label>
+        <input class="login-input" id="reg-nombre" type="text" placeholder="Tu nombre"/>
+      </div>
+      <div class="login-input-group">
+        <label>Email</label>
+        <input class="login-input" id="reg-email" type="email" placeholder="tu@email.com" autocomplete="email"/>
+      </div>
+      <div class="login-input-group">
+        <label>Contraseña</label>
+        <input class="login-input" id="reg-password" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+      </div>
+      <button class="login-btn" id="reg-btn" onclick="doRegister()">Crear cuenta</button>
+      <div class="login-switch">
+        ¿Ya tienes cuenta? <button onclick="switchForm('login')">Entrar</button>
+      </div>
+    </div>
+
+    <div class="login-footer">FlowInfluencer · Tu negocio, ordenado.</div>
+  </div>
+</div>
+
 </body>
 </html>
