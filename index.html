@@ -1664,6 +1664,44 @@
     _influencer=data;return data
   }
 
+
+  // Expose auth functions globally
+  window.switchForm = function(form) {
+    document.getElementById('login-error').style.display = 'none'
+    document.getElementById('login-success').style.display = 'none'
+    document.getElementById('form-login').style.display = form === 'login' ? 'block' : 'none'
+    document.getElementById('form-register').style.display = form === 'register' ? 'block' : 'none'
+  }
+  window.doLogin = async function() {
+    const email = document.getElementById('login-email').value.trim()
+    const password = document.getElementById('login-password').value
+    if (!email || !password) { document.getElementById('login-error').textContent='Completa todos los campos'; document.getElementById('login-error').style.display='block'; return }
+    const btn = document.getElementById('login-btn')
+    btn.disabled = true; btn.textContent = 'Entrando...'
+    const { data, error } = await db.auth.signInWithPassword({ email, password })
+    btn.disabled = false; btn.textContent = 'Entrar'
+    if (error) { document.getElementById('login-error').textContent='Email o contraseña incorrectos'; document.getElementById('login-error').style.display='block'; return }
+    onLogin(data.user)
+  }
+  window.doRegister = async function() {
+    const nombre = document.getElementById('reg-nombre').value.trim()
+    const email = document.getElementById('reg-email').value.trim()
+    const password = document.getElementById('reg-password').value
+    if (!nombre || !email || !password) { document.getElementById('login-error').textContent='Completa todos los campos'; document.getElementById('login-error').style.display='block'; return }
+    if (password.length < 6) { document.getElementById('login-error').textContent='La contraseña debe tener al menos 6 caracteres'; document.getElementById('login-error').style.display='block'; return }
+    const btn = document.getElementById('reg-btn')
+    btn.disabled = true; btn.textContent = 'Creando...'
+    const { data, error } = await db.auth.signUp({ email, password, options: { data: { nombre } } })
+    btn.disabled = false; btn.textContent = 'Crear cuenta'
+    if (error) { document.getElementById('login-error').textContent=error.message; document.getElementById('login-error').style.display='block'; return }
+    if (data.user) { await db.from('influencers').insert({ nombre, correo: email }); onLogin(data.user) }
+    else { document.getElementById('login-success').textContent='Revisa tu email para confirmar tu cuenta'; document.getElementById('login-success').style.display='block' }
+  }
+  window.doLogout = async function() {
+    if (!confirm('¿Cerrar sesión?')) return
+    await db.auth.signOut()
+  }
+
   // ── INIT ────────────────────────────────────────────────────
   loadDashboard()
 </script>
