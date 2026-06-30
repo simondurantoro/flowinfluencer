@@ -7,37 +7,42 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --black: #0a0a0a;
       --white: #ffffff;
-      --off: #f7f7f7;
+      --off: #f5f5f5;
       --border: #e8e8e8;
-      --border-dark: #d0d0d0;
+      --border-dark: #c8c8c8;
       --text: #0a0a0a;
       --muted: #888888;
-      --light: #f0f0f0;
+      --light: #efefef;
       --accent: #c8ff3e;
-      --accent-text: #1a2a00;
-      --danger: #ff3b3b;
+      --accent-text: #141f00;
+      --danger: #ff2d2d;
       --warning: #ff9500;
       --success: #00c853;
-      --blue: #0066ff;
-      --radius: 12px;
-      --radius-sm: 8px;
-      --nav-h: 60px;
+      --blue: #0055ff;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --nav-h: 56px;
     }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Barlow', sans-serif;
       background: var(--white);
       color: var(--text);
       min-height: 100vh;
       font-size: 14px;
       -webkit-font-smoothing: antialiased;
+    }
+
+    /* Barlow Condensed para números y títulos grandes */
+    .condensed {
+      font-family: 'Barlow Condensed', sans-serif;
     }
 
     /* ── LAYOUT ── */
@@ -53,10 +58,11 @@
       padding: 0 20px;
     }
     .logo {
-      font-size: 16px; font-weight: 900; letter-spacing: -0.5px;
-      color: var(--black);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px; font-weight: 900; letter-spacing: 1px;
+      color: var(--black); text-transform: uppercase;
     }
-    .logo-dot { color: var(--accent); background: var(--black); padding: 1px 4px; border-radius: 4px; }
+    .logo-dot { color: var(--accent); }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
     .avatar {
       width: 32px; height: 32px; border-radius: 50%;
@@ -96,7 +102,7 @@
     }
     .nav-item.active { color: var(--black); }
     .nav-item svg { width: 20px; height: 20px; }
-    .nav-label { font-size: 10px; font-weight: 500; }
+    .nav-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
 
     /* ── SCREENS ── */
     .screen { display: none; }
@@ -104,15 +110,17 @@
 
     /* ── PAGE HEADER ── */
     .page-header { margin-bottom: 24px; }
-    .page-title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: var(--black); }
+    .page-title { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 900; letter-spacing: 0.5px; color: var(--black); text-transform: uppercase; }
     .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
 
     /* ── BUTTONS ── */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 10px 18px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border: none; transition: all 0.15s; text-decoration: none;
+      padding: 10px 20px; border-radius: 4px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; cursor: pointer;
+      border: none; transition: all 0.12s; text-decoration: none;
     }
     .btn-primary { background: var(--black); color: var(--white); }
     .btn-primary:hover { opacity: 0.85; }
@@ -126,13 +134,13 @@
     /* ── STATS ── */
     .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .stat-card {
-      background: var(--off); border-radius: var(--radius);
-      padding: 16px; position: relative; overflow: hidden;
+      background: var(--off); border-radius: 6px;
+      padding: 16px 14px; position: relative; overflow: hidden;
     }
-    .stat-card.dark { background: var(--black); }
-    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .stat-card.dark .stat-label { color: #666; }
-    .stat-val { font-size: 24px; font-weight: 800; color: var(--black); letter-spacing: -0.5px; }
+    .stat-card.dark { background: var(--black); border: none; }
+    .stat-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .stat-card.dark .stat-label { color: #444; }
+    .stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 900; color: var(--black); letter-spacing: 0.5px; }
     .stat-card.dark .stat-val { color: var(--accent); }
     .stat-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
     .stat-card.dark .stat-sub { color: #555; }
@@ -141,10 +149,10 @@
     /* ── RESUMEN EJECUTIVO ── */
     .resumen-card {
       background: var(--black); border-radius: var(--radius);
-      padding: 20px; margin-bottom: 20px;
+      padding: 22px 20px; margin-bottom: 20px;
     }
-    .resumen-text { font-size: 15px; color: #ccc; line-height: 1.7; }
-    .resumen-text strong { color: var(--white); }
+    .resumen-text { font-size: 16px; color: #888; line-height: 1.65; font-family: 'Barlow', sans-serif; }
+    .resumen-text strong { color: var(--white); font-weight: 600; }
     .resumen-text .hi { color: var(--accent); font-weight: 700; }
 
     /* ── CHARTS ── */
@@ -153,7 +161,7 @@
       padding: 16px; margin-bottom: 16px;
     }
     .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .chart-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .chart-title { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
     .chart-select {
       font-size: 11px; padding: 4px 8px;
       background: var(--white); border: 1px solid var(--border);
@@ -173,28 +181,30 @@
     /* ── CAMP LIST ── */
     .camp-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .camp-card {
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      padding: 14px 16px; cursor: pointer; transition: border-color 0.15s;
+      border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 14px 16px; cursor: pointer; transition: all 0.12s;
       display: flex; align-items: center; gap: 12px;
     }
-    .camp-card:hover { border-color: var(--black); }
-    .camp-card:active { background: var(--off); }
+    .camp-card:hover { border-color: var(--black); background: var(--off); }
+    .camp-card:active { background: var(--light); }
     .camp-logo {
-      width: 40px; height: 40px; border-radius: 10px;
+      width: 38px; height: 38px; border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 15px; font-weight: 800; flex-shrink: 0;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px; font-weight: 900; flex-shrink: 0;
     }
     .camp-info { flex: 1; min-width: 0; }
-    .camp-name { font-size: 14px; font-weight: 700; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .camp-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px; text-transform: uppercase; }
     .camp-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .camp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
-    .camp-amount { font-size: 14px; font-weight: 700; color: var(--black); }
+    .camp-amount { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--black); letter-spacing: 0.3px; }
 
     /* ── BADGES ── */
     .badge {
       display: inline-flex; align-items: center;
-      padding: 3px 8px; border-radius: 20px;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap;
+      padding: 3px 8px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.8px; white-space: nowrap;
+      text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif;
     }
     .badge-black { background: var(--black); color: var(--white); }
     .badge-accent { background: var(--accent); color: var(--accent-text); }
@@ -206,7 +216,7 @@
 
     /* ── SECTION HEADER ── */
     .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; }
 
     /* ── LOADING ── */
     .loading { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
@@ -241,14 +251,14 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; font-weight: 900; flex-shrink: 0;
     }
-    .detail-title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; color: var(--black); }
+    .detail-title { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 900; letter-spacing: 0.5px; color: var(--black); text-transform: uppercase; }
     .detail-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
     .detail-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     .info-card { background: var(--off); border-radius: var(--radius-sm); padding: 12px 14px; }
-    .info-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .info-val { font-size: 15px; font-weight: 700; color: var(--black); }
+    .info-label { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px; }
+    .info-val { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: var(--black); }
     .info-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
     /* ── TIMELINE ── */
@@ -260,12 +270,12 @@
     .tl-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
     .tl-pending { background: var(--white); border-color: var(--border-dark); color: var(--muted); }
     .tl-body { flex:1; padding-bottom:18px; }
-    .tl-name { font-size:13px; font-weight:600; color:var(--black); }
+    .tl-name { font-family: 'Barlow Condensed', sans-serif; font-size:15px; font-weight:800; color:var(--black); text-transform: uppercase; letter-spacing: 0.3px; }
     .tl-date { font-size:11px; color:var(--muted); margin-top:2px; }
 
     /* ── ACTION STEPS ── */
     .action-section { margin-top: 16px; }
-    .action-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .action-title { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
     .action-step {
       display: flex; align-items: center; gap: 12px;
       padding: 12px 0; border-bottom: 1px solid var(--border);
@@ -276,12 +286,13 @@
     .as-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
     .as-pending { background: var(--white); border-color: var(--border-dark); color: var(--muted); }
     .action-step-info { flex: 1; }
-    .action-step-name { font-size: 13px; font-weight: 600; color: var(--black); }
+    .action-step-name { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; color: var(--black); text-transform: uppercase; letter-spacing: 0.3px; }
     .action-step-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .action-btn {
-      padding: 7px 14px; border-radius: var(--radius-sm);
-      font-size: 12px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap;
-      font-family: inherit;
+      padding: 7px 14px; border-radius: 4px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.8px;
+      text-transform: uppercase; border: none; cursor: pointer; white-space: nowrap;
     }
     .ab-primary { background: var(--black); color: white; }
     .ab-ghost { background: var(--off); color: var(--text); border: 1.5px solid var(--border-dark); }
@@ -309,9 +320,9 @@
     .cobro-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
     .cobro-card.urgent { border-color: var(--danger); }
     .cobro-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-    .cobro-name { font-size: 14px; font-weight: 700; color: var(--black); }
+    .cobro-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--black); text-transform: uppercase; letter-spacing: 0.3px; }
     .cobro-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .cobro-amount { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .cobro-amount { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; letter-spacing: 0.5px; }
     .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 10px 0 5px; }
     .progress-fill { height: 100%; border-radius: 2px; }
     .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
@@ -321,25 +332,25 @@
     .pub-card { background: var(--off); border-radius: var(--radius-sm); padding: 14px; }
     .pub-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .pub-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .pub-name { font-size: 12px; font-weight: 700; color: var(--black); margin-top: 2px; }
+    .pub-name { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 800; color: var(--black); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.3px; }
     .pub-date { font-size: 10px; color: var(--muted); }
     .metric-item { margin-bottom: 8px; }
     .metric-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
-    .metric-val { font-size: 16px; font-weight: 800; color: var(--black); letter-spacing: -0.3px; }
+    .metric-val { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900; color: var(--black); letter-spacing: 0.5px; }
     .resumen-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     .resumen-num { background: var(--black); border-radius: var(--radius-sm); padding: 14px; }
     .resumen-num .metric-label { color: #666; }
-    .resumen-num .metric-val { color: var(--accent); }
+    .resumen-num .metric-val { color: var(--accent); font-size: 24px; }
     .export-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 
     /* ── AGENCIAS ── */
     .agencia-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
     .agencia-card:hover { border-color: var(--black); }
-    .agencia-name { font-size: 15px; font-weight: 700; color: var(--black); }
+    .agencia-name { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900; color: var(--black); text-transform: uppercase; letter-spacing: 0.5px; }
     .agencia-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
     .agencia-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
     .ag-stat { background: var(--off); border-radius: var(--radius-sm); padding: 10px 12px; }
-    .ag-stat-val { font-size: 16px; font-weight: 800; color: var(--black); }
+    .ag-stat-val { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900; color: var(--black); }
     .ag-stat-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
 
     /* ── MODALS ── */
@@ -357,7 +368,7 @@
     }
     .modal-overlay.open .modal { transform: translateY(0); }
     .modal-handle { width: 36px; height: 4px; background: var(--border-dark); border-radius: 2px; margin: 0 auto 20px; }
-    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.3px; }
+    .modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 900; margin-bottom: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
     .form-group { margin-bottom: 14px; }
     .form-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
     .form-input, .form-select {
@@ -378,7 +389,7 @@
     }
     .flor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
     .flor-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-text); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-    .flor-name { font-size: 14px; font-weight: 700; color: var(--white); }
+    .flor-name { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--white); text-transform: uppercase; letter-spacing: 0.5px; }
     .flor-status { font-size: 11px; color: var(--accent); }
     .ok-card { background: #1a1a1a; border: 1px solid #333; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 10px; }
     .ok-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
@@ -406,10 +417,11 @@
     /* Desktop nav in topbar */
     .desk-nav { display: none; }
     .desk-nav-btn {
-      padding: 7px 14px; border-radius: var(--radius-sm);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      border: none; background: none; color: var(--muted); transition: all 0.15s;
-      font-family: inherit;
+      padding: 6px 14px; border-radius: 4px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; cursor: pointer;
+      border: none; background: none; color: var(--muted); transition: all 0.12s;
     }
     .desk-nav-btn:hover { color: var(--black); }
     .desk-nav-btn.active { background: var(--black); color: var(--white); }
@@ -430,7 +442,7 @@
 
   <!-- TOP BAR -->
   <header class="topbar">
-    <div class="logo">Flow<span class="logo-dot">F</span></div>
+    <div class="logo">Flow<span class="logo-dot">·</span>F</div>
     <nav class="desk-nav" id="desk-nav">
       <button class="desk-nav-btn active" onclick="showScreen('dashboard',this,'desk')">Inicio</button>
       <button class="desk-nav-btn" onclick="showScreen('campanas',this,'desk')">Campañas</button>
